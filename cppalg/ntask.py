@@ -47,7 +47,8 @@ def create_problem(problem_name):
         f.write(f'\nadd_executable({problem_name} src/{problem_name}/{
                 problem_name}.cpp src/{problem_name}/{problem_name}.h)\n')
         f.write(f'target_compile_options({
-                problem_name} PRIVATE -Wall -Wextra -Wpedantic -g -O0)\n')
+                problem_name} PRIVATE -Wall -Wextra -Wpedantic -g -O0 \
+                -Weffc++ -Wconversion -Wsign-conversion)\n')
         f.write(f'target_link_libraries({
                 problem_name} gtest_main gmock_main)\n')
 
