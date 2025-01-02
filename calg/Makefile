@@ -16,7 +16,10 @@ $(BUILD_DIR)/%: $(SRC_DIR)/%.c | $(dir $(BUILD_DIR)/%)
 $(BUILD_DIR)/%/:
 	mkdir -p $@
 
+format:
+	find $(SRC_DIR) -name "*.c" -exec clang-format -i {} +
+
 clean:
 	rm -rf $(BUILD_DIR)
 
-.PHONY: all clean
+.PHONY: all clean format
