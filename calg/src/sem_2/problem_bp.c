@@ -48,7 +48,6 @@ void print_binary_int(int val) {
   printf("\n");
 }
 
-
 int main() {
 
 #if 1
