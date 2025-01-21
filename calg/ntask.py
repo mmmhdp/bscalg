@@ -4,12 +4,12 @@ from pathlib import Path
 
 
 def main():
+    name = input("Enter problem name (default: a): ") or "a"
+    nsem = input("Enter seminar number (default: 0): ") or "0"
+    sem = input("Enter seminar prefix (default: sem_): ") or "sem_"
     src = input("Enter source directory (default: src): ") or "src"
     build = input("Enter build directory (default: build): ") or "build"
-    sem = input("Enter seminar prefix (default: sem_): ") or "sem_"
-    nsem = input("Enter seminar number (default: 0): ") or "0"
     root = input("Enter root directory (default: .): ") or "."
-    name = input("Enter problem name (default: a): ") or "a"
     langext = input("Enter language extension (default: .c): ") or ".c"
 
     root_path = Path(root)
