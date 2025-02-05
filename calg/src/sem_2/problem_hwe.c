@@ -14,13 +14,13 @@ struct sieve_t {
   unsigned char *mod5;
 };
 
-void set_bit(struct sieve_t *sv, int pos){
+void set_bit(struct sieve_t *sv, int pos) {
   int offset = (pos / 6) % CHAR_BIT, byte_offset = (pos / 6) / CHAR_BIT;
- 
+
   if (pos % 6 != 1 && pos % 6 != 5)
     return;
 
-  if (pos % 6 == 1){
+  if (pos % 6 == 1) {
     sv->mod1[byte_offset] |= (1u << offset);
   } else {
     sv->mod5[byte_offset] |= (1u << offset);
@@ -29,9 +29,9 @@ void set_bit(struct sieve_t *sv, int pos){
 
 int check_bit(struct sieve_t *sv, int pos) {
   int offset = (pos / 6) % CHAR_BIT, byte_offset = (pos / 6) / CHAR_BIT;
-  if (pos% 6 == 1)
+  if (pos % 6 == 1)
     return sv->mod1[byte_offset] & (1u << offset);
-  return sv->mod5[byte_offset]   & (1u << offset);
+  return sv->mod5[byte_offset] & (1u << offset);
 }
 
 int is_prime(struct sieve_t *sv, int num) {
@@ -49,10 +49,11 @@ void fill_sieve(struct sieve_t *sv) {
   int sieve_range = sv->n * 6 * CHAR_BIT;
   set_bit(sv, 1);
 
-  for (int el = 6; (el - 1) * (el - 1) < sieve_range; el += 6){
+  for (int el = 6; (el - 1) * (el - 1) < sieve_range; el += 6) {
     el_mod1 = el - 1;
-    if (check_bit(sv, el_mod1) == 0){
-      for (int sub_el = el_mod1 * el_mod1; sub_el < sieve_range; sub_el += el_mod1){
+    if (check_bit(sv, el_mod1) == 0) {
+      for (int sub_el = el_mod1 * el_mod1; sub_el < sieve_range;
+           sub_el += el_mod1) {
         set_bit(sv, sub_el);
       }
     }
@@ -60,8 +61,9 @@ void fill_sieve(struct sieve_t *sv) {
     el_mod5 = el + 1;
     if (el_mod5 * el_mod5 >= sieve_range)
       break;
-    if (check_bit(sv, el + 1) == 0){
-      for (int sub_el = el_mod5 * el_mod5; sub_el < sieve_range; sub_el += el_mod5){
+    if (check_bit(sv, el + 1) == 0) {
+      for (int sub_el = el_mod5 * el_mod5; sub_el < sieve_range;
+           sub_el += el_mod5) {
         set_bit(sv, sub_el);
       }
     }
@@ -110,8 +112,11 @@ int main() {
   int res;
   struct sieve_t *s;
 
+#if 1
   res = scanf("%d", &n);
   assert(res == 1);
+#endif
+
   s = (struct sieve_t *)malloc(sizeof(struct sieve_t));
   s->n = ((sieve_bound(n) / CHAR_BIT) / 6) + 1;
   s->mod1 = (unsigned char *)calloc(s->n + 1, sizeof(char));
@@ -119,23 +124,23 @@ int main() {
 
   fill_sieve(s);
 
-#if 0
-    {
-        int i = 0, k = 0;
-        printf("primes:\n");
-        while (k < n) {
-            if (is_prime(s, i)) {
-                printf("%d ", i);
-                k += 1;
-            }
-            i += 1;
-        }
-        printf("\n");
+#if 1
+  {
+    int i = 0, k = 0;
+    printf("primes:\n");
+    while (k < n) {
+      if (is_prime(s, i)) {
+        printf("%d ", i);
+        k += 1;
+      }
+      i += 1;
     }
-#endif
+    printf("\n");
+  }
 
   outp = nth_prime(s, n);
   printf("%d\n", outp);
+#endif
 
   free(s->mod1);
   free(s->mod5);

@@ -1,6 +1,5 @@
 CC = gcc
-CFLAGS = -g -Wall -lm -Wpedantic -O0
-
+CFLAGS = -g -Wall -Wextra -lm -Wpedantic -O0 -fsanitize=address -static-libasan
 SRC_DIR = src
 BUILD_DIR = build
 

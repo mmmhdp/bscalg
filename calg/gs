@@ -1,0 +1,7 @@
+winheight src 20
+
+disp parr[0]@len
+disp r_mj
+disp l_mj
+disp r_mj_cnt
+disp l_mj_cnt
