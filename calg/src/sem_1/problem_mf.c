@@ -58,6 +58,7 @@ void mModuloMulty(QuadMatrix *qm, QuadMatrix *qm1, int m) {
   qm->x_10 = curr_x_10 % m;
   qm->x_11 = curr_x_11 % m;
 }
+
 void copyQuadMatrix(QuadMatrix *source, QuadMatrix *dist) {
   dist->x_00 = source->x_00;
   dist->x_01 = source->x_01;
@@ -112,7 +113,7 @@ void showMatrix(QuadMatrix *qm) {
   printf("\n");
 }
 
-int main() {
+int main(void) {
 
   int nitems, x_00, x_01, x_10, x_11, n, m;
 
