@@ -12,10 +12,12 @@ def main():
     root = input("Enter root directory (default: .): ") or "."
     problem_name = input(
         "Enter the problem name to delete (default: a): ") or "a"
+    langext = input("Enter language extension (default: .c): ") or ".c"
 
     root_path = Path(root)
     seminar_rel_name = seminar + nseminar
-    path_to_code = root_path / src / seminar_rel_name / problem_name
+    problem_name_with_langext = problem_name + langext
+    path_to_code = root_path / src / seminar_rel_name / problem_name_with_langext
     path_to_bin = root_path / build / seminar_rel_name / problem_name
 
     if path_to_code.exists():

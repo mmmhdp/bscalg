@@ -1,7 +1,11 @@
 winheight src 20
 
-disp parr[0]@len
-disp r_mj
-disp l_mj
-disp r_mj_cnt
-disp l_mj_cnt
+disp i
+disp j
+disp arr[0]@size
+disp arrbuff[0]@size
+disp cnt[0]@10
+disp ndigit
+disp size
+disp ndigit
+disp expn

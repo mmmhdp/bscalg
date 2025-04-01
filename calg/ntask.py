@@ -25,7 +25,7 @@ def main():
 
     if not path_to_file.is_file():
         with path_to_file.open("w", encoding="utf-8") as fp:
-            fp.write("int main(){}\n")
+            fp.write("int main(void){}\n")
 
 
 if __name__ == "__main__":
