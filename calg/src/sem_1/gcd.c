@@ -51,7 +51,7 @@ read_input (int *pa, int *pb)
 }
 
 int
-main ()
+main (void)
 {
   int a, b, res;
   read_input (&a, &b);

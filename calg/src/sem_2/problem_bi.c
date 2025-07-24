@@ -4,7 +4,7 @@
 #define ENDL printf ("\n");
 
 int
-main ()
+main (void)
 {
   int n, target_bit;
   int *nums;

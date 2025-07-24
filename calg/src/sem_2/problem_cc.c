@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <bits/pthreadtypes.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -179,7 +178,7 @@ get_closest_circ (int N, int *cl_circ)
 }
 
 int
-main ()
+main (void)
 {
   int nitems, N;
 
