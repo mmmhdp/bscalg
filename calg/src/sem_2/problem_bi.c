@@ -1,28 +1,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define ENDL printf("\n");
+#define ENDL printf ("\n");
 
-int main() {
-
+int
+main ()
+{
   int n, target_bit;
   int *nums;
 
-  scanf("%d", &n);
-  nums = malloc(sizeof(int) * n);
+  scanf ("%d", &n);
+  nums = malloc (sizeof (int) * n);
 
-  for (int i = 0; i < n; i++) {
-    scanf("%d", &(nums[i]));
-  }
+  for (int i = 0; i < n; i++)
+    {
+      scanf ("%d", &(nums[i]));
+    }
 
-  scanf("%d", &target_bit);
+  scanf ("%d", &target_bit);
 
   int tidx = target_bit / 8;
   int ridx = target_bit % 8;
   nums[tidx] = nums[tidx] ^ (1 << ridx);
-  for (int i = 0; i < n; i++) {
-    printf("%d ", nums[i]);
-  }
+  for (int i = 0; i < n; i++)
+    {
+      printf ("%d ", nums[i]);
+    }
 
 #if 0
   printf("NUMBER OF NUMS IS %d", n);

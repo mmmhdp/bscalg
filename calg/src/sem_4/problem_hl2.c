@@ -1,124 +1,142 @@
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
-struct node_t {
+// #define RES
+#define FALSE 0
+#define TRUE 1
+
+#ifndef RES
+struct node_t
+{
   struct node_t *next;
   int data;
 };
+#endif
 
-struct node_t *list_is_a_loop(struct node_t *top) {
-  struct node_t *tortoise = NULL;
-  struct node_t *hare = NULL;
+struct node_t *
+read_list (FILE *inp)
+{
+  int nitems, tmp;
+  struct node_t *top, *tail, *tail_prev;
 
-  if (!top)
-    return 0;
-  if (!top->next)
-    return 0;
+  if (inp == NULL)
+    return NULL;
 
-  tortoise = top;
-  hare = top->next;
+  top = tail = tail_prev = NULL;
 
-  for (;;) {
-    if (tortoise == hare)
-      return hare;
-    if (!hare->next)
-      break;
-    if (!hare->next->next)
-      break;
+  tail = calloc (1, sizeof (struct node_t));
+  top = tail;
+  tail_prev = NULL;
 
-    tortoise = tortoise->next;
-    hare = hare->next->next;
-  }
+  while ((nitems = fscanf (inp, "%d", &tmp)) == 1)
+    {
+      tail->data = tmp;
+      tail->next = calloc (1, sizeof (struct node_t));
+      tail_prev = tail;
+      tail = tail->next;
+    }
 
-  return NULL;
+  tail_prev->next = NULL;
+  free (tail);
+
+  return top;
 }
 
-int loop_len(struct node_t *top) {
-  int loop_len_cnt = 0;
-  struct node_t *pivot_node = NULL;
-  struct node_t *forward = NULL;
-  pivot_node = list_is_a_loop(top);
+void
+delete_list (struct node_t *top)
+{
+  struct node_t *tmp;
 
-  if (!pivot_node)
-    return 0;
-
-  forward = pivot_node;
-
-  for (;;) {
-    loop_len_cnt++;
-    if ((forward = forward->next) == pivot_node)
-      return loop_len_cnt;
-  }
-
-  assert(0);
-  return -1;
+  while (top != NULL)
+    {
+      tmp = top->next;
+      free (top);
+      top = tmp;
+    }
 }
 
-void free_list(struct node_t *top) {
-  if (!top)
+int
+get_loop_len (struct node_t *t, struct node_t *r)
+{
+  int cnt;
+
+  cnt = 0;
+  for (;;)
+    {
+      r = r->next;
+      if (r != t)
+        cnt++;
+      else
+        break;
+    }
+
+  return ++cnt;
+}
+
+int
+list_is_a_loop (struct node_t *top)
+{
+  int res, loopsz;
+  struct node_t *t, *r;
+
+  res = FALSE;
+  loopsz = 0;
+  t = r = top;
+
+  // No elements or only one can't assemble a loop
+  if (top == NULL || top->next == NULL)
+    return res;
+
+  while (r != NULL)
+    {
+      t = t->next;
+      r = r->next;
+
+      if (r != NULL)
+        r = r->next;
+      else
+        {
+          res = loopsz;
+          break;
+        }
+
+      if (t == r)
+        {
+          loopsz = get_loop_len (t, r);
+          return loopsz;
+        }
+    }
+
+  return loopsz;
+}
+
+#ifndef RES
+void
+show_list (struct node_t const *const top)
+{
+  if (top == NULL)
     return;
 
-  struct node_t *tortoise = top, *hare = top;
-  int hasCycle = 0;
-  while (hare && hare->next) {
-    tortoise = tortoise->next;
-    hare = hare->next->next;
-    if (tortoise == hare) {
-      hasCycle = 1;
-      break;
-    }
-  }
+  printf ("%d ", top->data);
 
-  if (hasCycle) {
-    tortoise = top;
-    while (tortoise != hare) {
-      tortoise = tortoise->next;
-      hare = hare->next;
-    }
-    struct node_t *prev = tortoise;
-    while (prev->next != tortoise)
-      prev = prev->next;
-    prev->next = NULL;
-  }
-
-  while (top != NULL) {
-    struct node_t *tmp = top;
-    top = top->next;
-    free(tmp);
-  }
+  show_list (top->next);
 }
 
-int main(void) {
-  int i, nnodes, looppos, res, outcome;
-  struct node_t *top = NULL, *cur = NULL, *loopelem = NULL;
+int
+main (void)
+{
+  FILE *fd = fopen ("in.dat", "r");
+  struct node_t *top = read_list (fd);
 
-  res = scanf("%d%d", &nnodes, &looppos);
-  assert(res == 2);
-  assert(nnodes >= 0);
-  assert(looppos > -2);
-  assert(looppos < nnodes);
+  show_list (top);
 
-  if (nnodes > 0) {
-    top = calloc(1, sizeof(struct node_t));
-    cur = top;
-    if (looppos == 0)
-      loopelem = cur;
-  }
+  printf ("\n");
+  int is_a_loop = list_is_a_loop (top);
+  if (is_a_loop)
+    printf ("List has a loop!\n");
+  else
+    printf ("List is staight!\n");
 
-  for (i = 1; i < nnodes; ++i) {
-    cur->next = calloc(1, sizeof(struct node_t));
-    if (looppos == i)
-      loopelem = cur;
-    cur = cur->next;
-  }
-
-  if (looppos != -1)
-    cur->next = loopelem;
-
-  outcome = loop_len(top);
-  printf("%d\n", outcome);
-
-  free_list(top);
+  delete_list (top);
 }
+#endif

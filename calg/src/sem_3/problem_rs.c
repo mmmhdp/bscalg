@@ -2,91 +2,136 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void get_ready(int *size, int *digit, int **arr) {
-  int i = 0;
+#if NAIVE_LOL
+#define DEFAULT_BASE 10
 
-  if (scanf("%d", size) != 1)
-    abort();
+typedef struct
+{
+  int val;
+  int idx;
+} Element;
 
-  *arr = malloc(*size * sizeof(int));
+int
+element_cmp (const void *lhs, const void *rhs)
+{
+  const Element *elhs = lhs;
+  const Element *erhs = rhs;
 
-  while (i < *size)
-    if (scanf("%d", &(*arr)[i++]) != 1)
-      abort();
-
-  if (scanf("%d", digit) != 1)
-    abort();
+  return elhs->val - erhs->val;
 }
 
-void radix_sort(int *arr, int size, int ndigit) {
-  int j, key;
-  int *arrbuff = calloc(size, sizeof(int));
+void
+radix_sort (int arr[], int len, int radix)
+{
+  int i, expn, *arr_bf;
+  Element *el_bf;
 
-// full radix_sort implementation
-#if 0
-  int i;
-  int expn = 1;
-  for (i = 0; i < size; i++){
-    int cnt[10] = {0};
+  expn = 1;
+  for (i = 0; i < radix; ++i)
+    expn *= 10;
 
-    for(j = 0; j < size; j++)
-      cnt[ arr[j]/expn % 10 ] += 1;
+  el_bf = calloc (len, sizeof (Element));
 
-    for(j = 1; j < 10; j++)
-      cnt[j] += cnt[j - 1];
-
-    for(j = size - 1; j >= 0; j--){
-      key = ((arr[j]/expn) % 10); 
-      arrbuff[ cnt[key] - 1 ] = arr[j];
-      --cnt [key];
+  for (i = 0; i < len; ++i)
+    {
+      el_bf[i].val = (arr[i] / expn) % DEFAULT_BASE;
+      el_bf[i].idx = i;
     }
 
-    for(j = 0; j < size; j++)
-      arr[j] = arrbuff[j];
-    
-    expn *= 10;
-  }
-#else
-  // radix sort by base equal to ndigit
-  int expn = 1;
-  for (j = 0; j < ndigit; j++)
-    expn *= 10;
+  qsort ((void *)el_bf, len, sizeof (Element), element_cmp);
 
-  int cnt[10] = {0};
+  arr_bf = malloc (sizeof (int) * len);
+  for (i = 0; i < len; i++)
+    {
+      arr_bf[i] = arr[el_bf[i].idx];
+    }
 
-  for (j = 0; j < size; j++)
-    cnt[arr[j] / expn % 10] += 1;
+  for (i = 0; i < len; i++)
+    {
+      arr[i] = arr_bf[i];
+    }
 
-  for (j = 1; j < 10; j++)
-    cnt[j] += cnt[j - 1];
-
-  for (j = size - 1; j >= 0; j--) {
-    key = ((arr[j] / expn) % 10);
-    arrbuff[cnt[key] - 1] = arr[j];
-    --cnt[key];
-  }
-
-  for (j = 0; j < size; j++)
-    arr[j] = arrbuff[j];
-
+  free (arr_bf);
+  free (el_bf);
+}
 #endif
 
-  free(arrbuff);
+void
+radix_sort (int arr[], int len, int radix, int base)
+{
+  int i, expn, *bf, *cnts, k;
+
+  assert (base > 0);
+
+  bf = calloc (len, sizeof (int));
+  assert (bf != NULL);
+  cnts = calloc (base, sizeof (int));
+  assert (cnts != NULL);
+
+  // Define base for key extraction
+  expn = 1;
+  for (i = 0; i < radix; ++i)
+    expn *= base;
+
+  // Count intrance of each key
+  for (i = 0; i < len; ++i)
+    {
+      k = (int)(arr[i] / expn) % base;
+      assert (k < base);
+      cnts[k] += 1;
+    }
+
+  // Assemble cumulutive sum
+  for (i = 1; i < base; ++i)
+    cnts[i] += cnts[i - 1];
+
+  // Sort part
+  for (i = len - 1; i >= 0; --i)
+    {
+      k = (int)(arr[i] / expn) % base;
+      assert (k < base);
+
+      bf[cnts[k] - 1] = arr[i];
+      cnts[k]--;
+    }
+
+  // Swap buffer with original array
+  for (i = 0; i < len; ++i)
+    arr[i] = bf[i];
+
+  free (cnts);
+  free (bf);
 }
 
-void print_arr(int *arr, int size) {
-  for (int j = 0; j < size; j++)
-    printf("%d ", arr[j]);
-  printf("\n");
-}
+int
+main (void)
+{
+  int nitems, i, n, *arr, radix, base;
 
-int main(void) {
-  int size, ndigit;
-  int *arr = NULL;
+  base = 10;
 
-  get_ready(&size, &ndigit, &arr);
-  radix_sort(arr, size, ndigit);
-  print_arr(arr, size);
+  nitems = scanf ("%d", &n);
+  assert (nitems == 1);
 
-  free(arr);
+  arr = malloc (sizeof (int) * n);
+  assert (arr != NULL);
+
+  for (i = 0; i < n; ++i)
+    {
+      nitems = scanf ("%d", &(arr[i]));
+      assert (nitems == 1);
+    }
+
+  nitems = scanf ("%d", &radix);
+  assert (nitems == 1);
+
+  radix_sort (arr, n, radix, base);
+
+  for (i = 0; i < n; ++i)
+    {
+      printf ("%d ", arr[i]);
+    }
+  printf ("\n");
+
+  free (arr);
 }

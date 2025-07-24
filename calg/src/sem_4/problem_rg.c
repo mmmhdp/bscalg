@@ -1,23 +1,46 @@
-#include <assert.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
-int a, b, c, d;
+typedef int (*generator_t) (int);
 
-int mygen(int num) {
-  return (a * num + b) % c + d;
+int
+generator (int seed)
+{
+  static int cnt = 0;
+  if (cnt == 0)
+    {
+      cnt++;
+      return 0;
+    }
+
+  seed = (3 * seed + 2) % 5 + 4;
+  return seed;
 }
 
-typedef int (*generator_t)(int);
+unsigned
+cycle_len (generator_t gen)
+{
+  unsigned cnt;
+  int trash_val, r, t;
 
-unsigned cycle_len(generator_t gen){
-  
+  cnt = 0;
+  trash_val = gen (0);
+  r = t = gen (trash_val);
 
+  for (;;)
+    {
+      cnt++;
+      r = gen (r);
+      if (r == t)
+        break;
+    }
+
+  return cnt;
 }
 
-int main() {
-  int res = scanf("%d%d%d%d", &a, &b, &c, &d);
-  assert(res);
-  printf("%u\n", cycle_len(mygen));
+int
+main (void)
+{
+  int res;
+  res = cycle_len (generator);
+  printf ("%d\n", res);
 }

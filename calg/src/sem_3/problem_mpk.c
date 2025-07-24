@@ -1,366 +1,417 @@
 #include <assert.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct {
-  int deg;
-  int *coef;
+#define TRUE 1
+#define FALSE 0
+#define SHOW_DEBUG FALSE
+
+typedef struct
+{
+  int n;
+  int *box;
 } Poly;
 
-void free_poly(Poly *p) {
-  free(p->coef);
-  free(p);
-}
+void poly_print (Poly const *const p);
+void poly_free (Poly *p);
+void polys_free (int nump, ...);
+void poly_sum (Poly const *const p1, Poly const *const p2, Poly *const r);
+void poly_substraction (Poly const *const p1, Poly const *const p2,
+                        Poly *const r);
+void poly_extended_right_shift (Poly *const p, int nsteps, Poly *const r);
+void poly_copy (Poly const *const p, Poly *r);
+void poly_karatsuba_mult (Poly const *const p1, Poly const *const p2,
+                          Poly *const r);
+void poly_set_box (Poly *const p, int *new_box, int new_dim);
 
-Poly *init_poly(int deg) {
-  Poly *p = (Poly *)malloc(sizeof(Poly));
-  p->deg = deg;
-  p->coef = (int *)calloc(p->deg, sizeof(int));
-  return p;
-}
+void poly_trim_dim (Poly const *const p, Poly *r);
 
-void print_poly(Poly *p) {
-  for (int i = 0; i < p->deg; i++)
-    printf("%d ", p->coef[i]);
-  printf("\n");
-}
-
-void print_restricted_poly(Poly *p) {
-  int largest_coef_idx = 0;
-
-  for (int i = 0; i < p->deg; i++)
-    if (p->coef[i] != 0)
-      largest_coef_idx = i;
-
-  for (int i = 0; i < largest_coef_idx + 1; i++)
-    printf("%d ", p->coef[i]);
-  printf("\n");
-}
-
-Poly *shift_poly(Poly *p, int shift) {
-  Poly *tmp = init_poly(p->deg + shift);
-  for (int i = 0; i < p->deg; i++) {
-    tmp->coef[i + shift] = p->coef[i];
-  }
-  return tmp;
-}
-
-Poly *copy_poly(Poly *src) {
-  Poly *tmp = init_poly(src->deg);
-  for (int i = 0; i < src->deg; i++)
-    tmp->coef[i] = src->coef[i];
-
-  return tmp;
-}
-
-void cut_trailing_zeros_for_poly(Poly *p) {
-  int largest_coef_idx = 0;
-
-  for (int i = 0; i < p->deg; i++)
-    if (p->coef[i] != 0)
-      largest_coef_idx = i;
-
-  p->deg = largest_coef_idx + 1;
-  int *buffer = malloc(sizeof(int) * p->deg);
-  for (int i = 0; i < p->deg; i++)
-    buffer[i] = p->coef[i];
-
-  free(p->coef);
-  p->coef = buffer;
-}
-
-Poly *sum_poly(Poly *p1, Poly *p2) {
-  Poly *lowest_deg_p = (p1->deg < p2->deg) ? p1 : p2;
-  int deg = (p1->deg > p2->deg) ? p1->deg : p2->deg;
-
-  Poly *p = init_poly(deg);
-
+void
+poly_print (Poly const *const p)
+{
   int i;
-  for (i = 0; i < lowest_deg_p->deg; i++)
-    p->coef[i] = p1->coef[i] + p2->coef[i];
+  Poly *pbuff = calloc (1, sizeof (Poly));
+  poly_trim_dim (p, pbuff);
 
-  if (p1->deg == p2->deg)
-    return p;
-  else if (p1->deg < p2->deg) {
-    for (; i < p2->deg; i++) {
-      p->coef[i] = p2->coef[i];
+  if (p->n <= 0 || p->box == NULL)
+    {
+      return;
     }
-  } else {
-    for (; i < p1->deg; i++) {
-      p->coef[i] = p1->coef[i];
-    }
-  }
 
-  return p;
+  for (i = 0; i < pbuff->n; i++)
+    printf ("%d ", pbuff->box[i]);
+  printf ("\n");
+
+  poly_free (pbuff);
 }
 
-Poly *sub_poly(Poly *p1, Poly *p2) {
-  Poly *lowest_deg_p = (p1->deg < p2->deg) ? p1 : p2;
-  int deg = (p1->deg > p2->deg) ? p1->deg : p2->deg;
+void
+poly_free (Poly *p)
+{
+  free (p->box);
+  free (p);
+}
 
-  Poly *p = init_poly(deg);
-
+void
+polys_free (int nump, ...)
+{
   int i;
-  for (i = 0; i < lowest_deg_p->deg; i++)
-    p->coef[i] = p1->coef[i] - p2->coef[i];
+  Poly *ptmppoly;
 
-  if (p1->deg == p2->deg)
-    return p;
-  else if (p1->deg < p2->deg) {
-    for (; i < p2->deg; i++) {
-      p->coef[i] = (-1) * p2->coef[i];
-    }
-  } else {
-    for (; i < p1->deg; i++) {
-      p->coef[i] = p1->coef[i];
-    }
-  }
+  va_list ppolys;
+  va_start (ppolys, nump);
 
-  return p;
+  for (i = 0; i < nump; i++)
+    {
+      ptmppoly = va_arg (ppolys, Poly *);
+      poly_free (ptmppoly);
+    }
+
+  assert (i == nump);
+
+  va_end (ppolys);
 }
 
-/*
- 2 3
- 1 + 2x
- 1 + 2x + 3x^2
-
- (1 + 2x)(1 + 2x + 3x^2) = (1 + 2x + 3x^2) + (2x + 4x^2 + 6x^3) =
- 1 + 4x + 7x^2 + 6x^3
-
- 1 4 7 6
- * */
-
-Poly *mult_poly(Poly *p1, Poly *p2) {
-  int deg = p1->deg * p2->deg;
-  Poly *p = init_poly(deg);
-
-  for (int i = 0; i < p1->deg; i++) {
-    for (int j = 0; j < p2->deg; j++) {
-      if ((i != 0 && j != 0) || (i == 0 && j == 0))
-        p->coef[i + j] += p1->coef[i] * p2->coef[j];
-      else if (i == 0 && j != 0)
-        p->coef[j] += p1->coef[i] * p2->coef[j];
-      else if (i != 0 && j == 0)
-        p->coef[i] += p1->coef[i] * p2->coef[j];
-    }
-  }
-
-  cut_trailing_zeros_for_poly(p);
-
-  return p;
+void
+poly_set_box (Poly *const p, int *new_box, int new_dim)
+{
+  free (p->box);
+  p->box = new_box;
+  p->n = new_dim;
 }
 
-/*
-4 4
-1 + 2x + 3x^2 + 0x^3 + 1x^4
-1 + 0x + 2x^2 + 0x^3 + 2x^4
+void
+poly_trim_dim (Poly const *const p, Poly *r)
+{
+  int idx, real_dim = p->n;
+  int *buff;
+  for (idx = p->n - 1; idx >= 0; idx--)
+    {
+      if (p->box[idx] != 0)
+        break;
+      real_dim--;
+    }
 
-***********************************************************************************
-O(n^2) naive alg
+  if (real_dim == p->n)
+    {
+      poly_copy (p, r);
+      return;
+    }
 
-(1 + 2x + 3x^2 + 1x^4)(1 + 0x + 2x^2 + 2x^4) =
-1    + 0 + 2x^2 + 2x^4 +
-2x   + 0 + 4x^3 + 4x^5 +
-3x^2 + 0 + 6x^4 + 6x^6 +
-x^4  + 0 + 2x^6 + 2x^8 =
-1 + 2x + 5x^2 + 4x^3 + 9x^4 + 4x^5 + 8x^6 + 2x^8
-1 2 5 4 9 4 8 0 2
+  if (real_dim == 0)
+    {
+      buff = calloc (1, sizeof (int));
+      real_dim = 0;
+      poly_set_box (r, buff, real_dim);
+      return;
+    }
 
-***********************************************************************************
-O(n^{log_2{3}} karatsuba mult alg
+  buff = calloc (real_dim, sizeof (int));
+  for (idx = 0; idx < real_dim; idx++)
+    buff[idx] = p->box[idx];
+  poly_set_box (r, buff, real_dim);
+}
 
-A * B = (t^{n/2}*P + Q)(t^{n/2}*R + T)  = t^{n}*PR  + t^{n/2}*(PT + QR) + QT
-x = PR
-y = QT
-z = PT + QR = (P + Q)(R + T) - x - y
+void
+poly_sum (Poly const *const p1, Poly const *const p2, Poly *const r)
+{
+  int idx;
+  int dim = p1->n > p2->n ? p1->n : p2->n;
 
-(P + Q)(R + T) = PR + PT + QR + QT = x + z + y
+  int major_dim = p1->n > p2->n ? p1->n : p2->n;
+  int minor_dim = p1->n < p2->n ? p1->n : p2->n;
 
-A * B  = t^{n} * x + t^{n/2} * ((P + Q)(R + T) -x -y) + y
+  char p1_is_major = 0;
+  if (major_dim == p1->n)
+    p1_is_major = 1;
 
-x - 1 mult
-y - 1 mult
-z - 4 sum and 1 mult
+  int *buff = calloc (dim, sizeof (int));
 
-=> 3 sub ops with n/2 work on each
-T(n) = 3T(n/2) + O(n)
+  for (idx = 0; idx < minor_dim; idx++)
+    buff[idx] = p1->box[idx] + p2->box[idx];
 
-3/2 > 1 => by Master Theorem : T(n) = 3^{log_{2}n} = n^{log_2{3}} < n^2!!!
+  for (idx = minor_dim; idx < major_dim; idx++)
+    if (p1_is_major)
+      buff[idx] = p1->box[idx];
+    else
+      buff[idx] = p2->box[idx];
 
-example
+  poly_set_box (r, buff, major_dim);
+}
 
+void
+poly_substraction (Poly const *const p1, Poly const *const p2, Poly *const r)
+{
+  int idx;
+  int dim = p1->n > p2->n ? p1->n : p2->n;
 
-A = 1 + 2x + 3x^2 + 1x^4 = (1 + 2x) + x^2(3 + 1x^2)
-B = 1 + 0x + 2x^2 + 2x^4 = (1 + 0x) + x^2(2 + 2x^2)
+  int major_dim = p1->n > p2->n ? p1->n : p2->n;
+  int minor_dim = p1->n < p2->n ? p1->n : p2->n;
 
-Q = 1 + 2x
-P = 3 + x^2
+  char p1_is_major = 0;
+  if (major_dim == p1->n)
+    p1_is_major = 1;
 
-T = 1 + 0x
-R = 2 + 2x^2
- * */
+  int *buff = calloc (dim, sizeof (int));
 
-Poly *karatsuba_mult_poly(Poly *p1, Poly *p2) {
-  Poly *p, *Q, *P, *T, *R, *PR, *QT, *s_1, *s_2, *prod, *sub_1, *z, *shifted_PR,
-      *shifted_z, *p_1;
-  int n_1 = p1->deg, n_2 = p2->deg;
+  for (idx = 0; idx < minor_dim; idx++)
+    buff[idx] = p1->box[idx] - p2->box[idx];
 
-  assert(n_1 % 2 == 0);
-  assert(n_2 % 2 == 0);
-  assert(n_1 == n_2);
+  for (idx = minor_dim; idx < major_dim; idx++)
+    if (p1_is_major)
+      buff[idx] = p1->box[idx];
+    else
+      buff[idx] = p2->box[idx];
+
+  poly_set_box (r, buff, major_dim);
+}
+
+void
+poly_copy (Poly const *const sp, Poly *dp)
+{
+  int *buff, idx, dim;
+  dim = sp->n;
+
+  buff = calloc (dim, sizeof (int));
+
+  for (idx = 0; idx < sp->n; idx++)
+    buff[idx] = sp->box[idx];
+
+  poly_set_box (dp, buff, dim);
+}
+
+void
+poly_extended_right_shift (Poly *const p, int nsteps, Poly *const r)
+{
+  int idx, *buff;
+  buff = calloc (p->n + nsteps, sizeof (int));
+
+  for (idx = 0; idx < p->n; idx++)
+    buff[idx + nsteps] = p->box[idx];
+
+  poly_set_box (r, buff, p->n + nsteps);
+}
+
+void
+poly_naive_mult (Poly const *const p1, Poly const *const p2, Poly *r)
+{
+  int i, j, *buff, dim;
+  dim = p1->n + p2->n;
+  buff = calloc (dim, sizeof (int));
+
+  for (i = 0; i < p1->n; i++)
+    {
+      for (j = 0; j < p2->n; j++)
+        {
+          buff[i + j] += p1->box[i] * p2->box[j];
+        }
+    }
+
+  poly_set_box (r, buff, dim);
+}
+
+// Task assumption is that polys dims will be a power of 2
+void
+poly_karatsuba_mult (Poly const *const p1, Poly const *const p2, Poly *const r)
+{
+
+#if SHOW_DEBUG
+  if (((p1->n) == 0) || ((p2->n) == 0))
+    {
+      printf ("Dims mismatched! Zero dims action!\n");
+      printf ("p1 dim = %d, p2 dim = %d\n", p1->n, p2->n);
+      poly_print (p1);
+      poly_print (p2);
+      abort ();
+    }
+#endif
+
+#if SHOW_DEBUG
+  if ((p1->n) != (p2->n))
+    {
+      printf ("Dims mismatched! Not equal dims of operands\n");
+      printf ("p1 dim = %d, p2 dim = %d\n", p1->n, p2->n);
+      poly_print (p1);
+      poly_print (p2);
+      abort ();
+    }
+#endif
+
+  // Task assumption requirements
+  assert (p1->n == p2->n);
+
+  // Reverse recursion at dim equal to 2^8 = 256 with naive algo
+  if (((p1->n) == 256) && ((p2->n) == 256))
+    {
+      poly_naive_mult (p1, p2, r);
+      return;
+    }
+
+#if SHOW_DEBUG
+  if (!(((p1->n % 2) == 0) && ((p2->n % 2) == 0)))
+    {
+      printf ("Dims mismatched! Odd dims are in place!\n");
+      printf ("p1 dim = %d, p2 dim = %d\n", p1->n, p2->n);
+      poly_print (p1);
+      poly_print (p2);
+      abort ();
+    }
+
+#endif
+
+  // Task assumption requirements
+  assert (p1->n % 2 == 0 && p2->n % 2 == 0);
+
+  Poly *A_0, *A_1, *B_0, *B_1, *S_1, *S_2, *S_3, *S_4, *S_5, *S_6, *S_7, *S_8,
+      *S_9, *S_10, *S_11;
+  S_1 = calloc (1, sizeof (Poly));
+  S_2 = calloc (1, sizeof (Poly));
+  S_3 = calloc (1, sizeof (Poly));
+  S_4 = calloc (1, sizeof (Poly));
+  S_5 = calloc (1, sizeof (Poly));
+  S_6 = calloc (1, sizeof (Poly));
+  S_7 = calloc (1, sizeof (Poly));
+  S_8 = calloc (1, sizeof (Poly));
+  S_9 = calloc (1, sizeof (Poly));
+  S_10 = calloc (1, sizeof (Poly));
+  S_11 = calloc (1, sizeof (Poly));
+
+  A_0 = malloc (sizeof (Poly));
+  A_0->n = p1->n / 2;
+  A_0->box = &(p1->box[A_0->n]);
+
+#if SHOW_DEBUG
+  printf ("A_0\n");
+  poly_print (A_0);
+#endif
+
+  A_1 = malloc (sizeof (Poly));
+  A_1->n = p1->n / 2;
+  A_1->box = &(p1->box[0]);
+
+#if SHOW_DEBUG
+  printf ("A_1\n");
+  poly_print (A_1);
+#endif
+
+  B_0 = malloc (sizeof (Poly));
+  B_0->n = p2->n / 2;
+  B_0->box = &(p2->box[A_0->n]);
+
+#if SHOW_DEBUG
+  printf ("B_0\n");
+  poly_print (B_0);
+#endif
+
+  B_1 = malloc (sizeof (Poly));
+  B_1->n = p2->n / 2;
+  B_1->box = &(p2->box[0]);
+
+#if SHOW_DEBUG
+  printf ("B_1\n");
+  poly_print (B_1);
+#endif
 
 #if 1
-  int DEG_BOUND = 512;
-  if (p1->deg < DEG_BOUND + 1 && p2->deg < DEG_BOUND + 1) {
-    p = mult_poly(p1, p2);
-    return p;
-  }
+  poly_karatsuba_mult (A_0, B_0, S_1);
+  poly_karatsuba_mult (A_1, B_1, S_2);
+  poly_sum (A_0, A_1, S_3);
+  poly_sum (B_0, B_1, S_4);
+  poly_karatsuba_mult (S_3, S_4, S_5);
+  poly_substraction (S_5, S_2, S_6);
+  poly_substraction (S_6, S_1, S_7);
+
+  poly_extended_right_shift (S_1, p1->n, S_8);
+  poly_extended_right_shift (S_7, p1->n / 2, S_9);
+
+  poly_sum (S_8, S_9, S_10);
+  poly_sum (S_10, S_2, S_11);
+
+  poly_copy (S_11, r);
 #endif
 
-  /*
-  A = p1
-  B = p2
-  A * B = (Q + t^{n/2}*P)(T + t^{n/2}*R)  = t^{n}*PR  + t^{n/2}*(PT + QR) + QT
-  x = PR
-  y = QT
-  s_1 = P + Q
-  s_2 = R + T
-  prod = s_1 * s_2
-  sub_1 = prod - x = prod - PR
-  z = PT + QR = (P + Q)(R + T) - x - y = prod - x - y = sub_1 - y = sub_1 - QT
-  */
-  Q = init_poly(n_1 / 2);
-  for (int i = 0; i < Q->deg; i++)
-    Q->coef[i] = p1->coef[i];
+  free (A_0);
+  free (A_1);
+  free (B_0);
+  free (B_1);
 
-  if (n_1 % 2 == 0) {
-    P = init_poly(n_1 / 2);
-    for (int i = Q->deg; i < p1->deg; i++)
-      P->coef[i - Q->deg] = p1->coef[i];
-  } else {
-    P = init_poly(n_1 / 2 + 1);
-    for (int i = Q->deg; i < p1->deg; i++)
-      P->coef[i - Q->deg] = p1->coef[i];
-  }
-
-  T = init_poly(n_2 / 2);
-  for (int i = 0; i < T->deg; i++)
-    T->coef[i] = p2->coef[i];
-
-  if (n_2 % 2 == 0) {
-    R = init_poly(n_2 / 2);
-    for (int i = T->deg; i < p2->deg; i++)
-      R->coef[i - T->deg] = p2->coef[i];
-  } else {
-    R = init_poly(n_2 / 2 + 1);
-    for (int i = T->deg; i < p2->deg; i++)
-      R->coef[i - T->deg] = p2->coef[i];
-  }
-
-  PR = karatsuba_mult_poly(P, R);
-  QT = karatsuba_mult_poly(Q, T);
-
-  s_1 = sum_poly(P, Q);
-  s_2 = sum_poly(R, T);
-
-  prod = karatsuba_mult_poly(s_1, s_2);
-
-  sub_1 = sub_poly(prod, PR);
-  z = sub_poly(sub_1, QT);
-
-  shifted_PR = shift_poly(PR, P->deg + R->deg);
-  shifted_z = shift_poly(z, (P->deg + R->deg) / 2);
-
-  p_1 = sum_poly(shifted_PR, shifted_z);
-  p = sum_poly(p_1, QT);
-
-  free_poly(PR);
-  free_poly(QT);
-  free_poly(s_1);
-  free_poly(s_2);
-  free_poly(prod);
-  free_poly(sub_1);
-  free_poly(shifted_PR);
-  free_poly(shifted_z);
-  free_poly(p_1);
-  free_poly(z);
-  free_poly(Q);
-  free_poly(P);
-  free_poly(T);
-  free_poly(R);
-
-  cut_trailing_zeros_for_poly(p);
-
-  return p;
+  polys_free (11, S_1, S_2, S_3, S_4, S_5, S_6, S_7, S_8, S_9, S_10, S_11);
 }
 
-int main() {
-  int nitems, n_1, n_2;
-  Poly *p1, *p2, *p1kmp2;
+int
+main (void)
+{
 
-#if 0
-  Poly *p1mp2, *p1sp2, *p1subp2, *p1shift;
-#endif
+  int nitems, tmp, i;
 
-  nitems = scanf("%d %d", &n_1, &n_2);
-  if (nitems != 2)
-    abort();
-  p1 = init_poly(n_1);
-  p2 = init_poly(n_2);
+  Poly *p1 = calloc (1, sizeof (Poly));
+  Poly *p2 = calloc (1, sizeof (Poly));
+  Poly *p3 = calloc (1, sizeof (Poly));
 
-  for (int i = 0; i < n_1; i++) {
-    nitems = scanf("%d", &(p1->coef[i]));
-    if (nitems != 1)
-      abort();
-  }
+  nitems = scanf ("%d", &tmp);
+  p1->n = tmp;
+  if (nitems != 1)
+    abort ();
 
-  for (int i = 0; i < n_2; i++) {
-    nitems = scanf("%d", &(p2->coef[i]));
-    if (nitems != 1)
-      abort();
-  }
+  p1->box = calloc (p1->n, sizeof (int));
 
-#if 0
-  print_poly(p1);
-  print_poly(p2);
+  nitems = scanf ("%d", &tmp);
+  p2->n = tmp;
+  if (nitems != 1)
+    abort ();
 
-  p1shift = shift_poly(p1, 10);
-  print_restricted_poly(p1shift);
+  p2->box = calloc (p2->n, sizeof (int));
 
-  p1sp2 = sum_poly(p1, p2);
-  print_restricted_poly(p1sp2);
+  p3->n = p1->n + p2->n;
+  p3->box = calloc (p3->n, sizeof (int));
 
-  p1subp2 = sub_poly(p1, p2);
-  print_restricted_poly(p1subp2);
+  for (i = 0; i < p1->n; i++)
+    {
+      nitems = scanf ("%d", &tmp);
+      if (nitems != 1)
+        abort ();
 
-  p1mp2 = mult_poly(p1, p2);
-  print_restricted_poly(p1mp2);
-#endif
-
-  p1kmp2 = karatsuba_mult_poly(p1, p2);
-  print_restricted_poly(p1kmp2);
-
-#if 0
-  printf("BASIC MULT DEG RES IS %d\n", p1mp2->deg);
-  printf("KARA MULT DEG RES IS %d\n", p1kmp2->deg);
-  for (int i = 0; i < p1mp2->deg; i++) {
-    if (p1mp2->coef[i] != p1kmp2->coef[i]) {
-      printf("WRONG COEF ON POS %d\n", i);
-      printf("%d FOR BASIC AND %d for KARA\n", p1mp2->coef[i], p1kmp2->coef[i]);
-      break;
+      p1->box[i] = tmp;
     }
-  }
-#endif
 
-  free_poly(p1);
-  free_poly(p2);
+  for (i = 0; i < p2->n; i++)
+    {
+      nitems = scanf ("%d", &tmp);
+      if (nitems != 1)
+        abort ();
+
+      p2->box[i] = tmp;
+    }
+
+#if SHOW_DEBUG
+  printf ("Before\n");
+  poly_print (p1);
+  poly_print (p2);
+  poly_print (p3);
+  printf ("\n");
 
 #if 0
-  free_poly(p1shift);
-  free_poly(p1sp2);
-  free_poly(p1subp2);
-  free_poly(p1mp2);
+  poly_sum(p1, p2, p3);
+#elif 0
+  poly_substraction (p1, p2, p3);
+#elif 0
+  poly_copy (p1, p3);
+#elif 0
+  poly_extended_right_shift (p1, 3, p3);
+#else
+  poly_karatsuba_mult (p1, p2, p3);
 #endif
 
-  free_poly(p1kmp2);
+  printf ("After\n");
+  poly_print (p1);
+  poly_print (p2);
+  poly_print (p3);
+#else
+  poly_karatsuba_mult (p1, p2, p3);
+  // poly_naive_mult(p1, p2, p3);
+  poly_print (p3);
+#endif
+  polys_free (3, p1, p2, p3);
+  return 0;
 }

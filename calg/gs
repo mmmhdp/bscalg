@@ -1,11 +1,13 @@
 winheight src 20
 
-disp i
-disp j
-disp arr[0]@size
-disp arrbuff[0]@size
-disp cnt[0]@10
-disp ndigit
-disp size
-disp ndigit
-disp expn
+b rt_merge
+b row_cmp
+
+disp {l, m, r}
+
+disp bfsz
+
+disp lp[0]@(rt->ncols)
+disp rp[0]@(rt->ncols)
+
+disp {left, right}
