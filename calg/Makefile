@@ -26,7 +26,11 @@ $(BUILD_DIR)/%/:
 	mkdir -p $@
 
 run:
+<<<<<<< HEAD
 	./build/sandbox0/check < in.dat
+=======
+	./build/sem_4/problem_hwh < in.dat
+>>>>>>> cfed7d5 (feat: problem_hwh initial state done)
 
 assemble: $(ASM_FILES)
 
