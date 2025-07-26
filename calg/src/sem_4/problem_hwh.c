@@ -21,6 +21,18 @@ typedef struct ht
 } Ht;
 
 void
+lstnd_show(LstNd * top)
+{
+  if (!top)
+  {
+    printf("||");
+    return;
+  }
+  printf("->%s->", top->v);
+  lstnd_show (top->nxt);
+}
+
+void
 lstnd_free (LstNd *top)
 {
   if (!top)
@@ -62,12 +74,28 @@ lstnd_update(LstNd **root, char * key)
   lstnd_update(&top->nxt, key);
 }
 
+int 
+lstnd_cnt(LstNd *top)
+{
+  int cnt = 0;
+  while (top)
+  {
+    cnt++;
+    top = top->nxt;
+  }
+
+  return cnt;
+}
+
 unsigned long
 ht_hsf (char *key)
 {
   int i;
   unsigned long hs;
   char c;
+
+  if (strlen(key) == 0)
+    return 0;
 
   assert (strlen (key) != 0);
   for (i = 0; i < (int)strlen (key); i++)
@@ -105,14 +133,35 @@ ht_add (Ht *ht, char *key)
 
   hs = ht_hsf (key);
   lstnd_update(&ht->tb[hs], key);
-
 }
 
 int
-ht_cnt (char *key)
+ht_cnt (Ht * ht, char *key)
 {
-  key = key;
-  return -1;
+  int hs;
+  int cnt;
+
+  hs = ht_hsf(key);
+  if (!(ht->tb[hs]))
+    return 0;
+  cnt = lstnd_cnt(ht->tb[hs]);
+
+  return cnt;
+}
+
+void
+ht_show(Ht *ht)
+{
+  int i;
+  for (i = 0; i < HSH_TB_CP; i++)
+    if (ht->tb[i])
+    {
+      printf("Key %d is presented\n", i);
+      printf("()");
+      lstnd_show(ht->tb[i]);
+      printf("\n");
+    }
+
 }
 
 char *
@@ -172,6 +221,7 @@ read_key (FILE *fd)
   return w;
 }
 
+#if 0
 int
 main (void)
 {
@@ -182,17 +232,22 @@ main (void)
   ht_add(h, "Hello");
   ht_add(h, "Hello");
 
+  ht_show(h);
+
   ht_free (h);
 }
 
-#if 0
+#else
+
 int
 main (void)
 {
-  int nq;
+  int nq, cnt;
   unsigned long sbfsz, sqbfsz, slen, sqlen;
   char *s, *sq, *w;
+  Ht * ht;
 
+  ht = ht_init();
   s = sq = NULL;
 
   scanf ("%d ", &nq);
@@ -203,10 +258,9 @@ main (void)
   for (;;)
     {
       w = read_key (sd);
-      free (w);
-
       if (!w)
         break;
+      ht_add(ht, w);
     }
 
   fclose (sd);
@@ -221,11 +275,18 @@ main (void)
       w = read_key (sqd);
       if (!w)
         break;
-      printf ("cnt : %d\n", ht_cnt (w));
+      cnt = ht_cnt(ht, w);
+      printf ("%d\n", cnt);
       free (w);
     }
 
+#ifdef HSH_DBG
+  ht_show(ht);
+#endif
+
   fclose (sqd);
   free (sq);
+
+  ht_free(ht);
 }
 #endif
