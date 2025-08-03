@@ -1,9 +1,8 @@
-CC = clang
+CC = gcc
 WARNING_AND_ERRORS = -Wall -Wextra -Wpedantic 
 OPTIMIZATION =
 LIBS = -lc -lm
-#XSANITIZE = -fsanitize=address -fsanitize=leak -static-libasan
-XSANITIZE = -fsanitize=address -static-libsan
+XSANITIZE = -fsanitize=address -fsanitize=leak -static-libasan
 DBUG_INF = -g 
 CFLAGS = $(DBUG_INF) $(WARNING_AND_ERRORS) $(LIBS) $(XSANITIZE) $(OPTIMIZATION)
 ASM_CFLAGS = $(WARNING_AND_ERRORS) $(LIBS) 
@@ -26,7 +25,7 @@ $(BUILD_DIR)/%/:
 	mkdir -p $@
 
 run:
-	./build/sem_4/problem_hwh < in.dat
+	./build/sem_6/problem_as2 < in.dat
 
 assemble: $(ASM_FILES)
 
