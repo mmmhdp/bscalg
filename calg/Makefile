@@ -1,4 +1,5 @@
 CC = gcc
+ASM_FLAGS = -masm=intel
 WARNING_AND_ERRORS = -Wall -Wextra -Wpedantic 
 OPTIMIZATION =
 LIBS = -lc -lm
@@ -18,14 +19,17 @@ ASM_FILES := $(patsubst $(SRC_DIR)/%.c, $(ASM_DIR)/%.s, $(SOURCES))
 
 all: $(TARGETS) run
 
+#$(BUILD_DIR)/%: $(SRC_DIR)/%.c $(SRC_DIR)/%.s| $(dir $(BUILD_DIR)/%)
+#	$(CC) $^ -o $@ $(CFLAGS) $(ASM_FLAGS)
+
 $(BUILD_DIR)/%: $(SRC_DIR)/%.c | $(dir $(BUILD_DIR)/%)
-	$(CC) $< -o $@ $(CFLAGS)
+	$(CC) $^ -o $@ $(CFLAGS) $(ASM_FLAGS)
 
 $(BUILD_DIR)/%/:
 	mkdir -p $@
 
 run:
-	./build/sem_6/problem_as2 < in.dat
+	./build/sem_6/problem_rp< in.dat
 
 assemble: $(ASM_FILES)
 

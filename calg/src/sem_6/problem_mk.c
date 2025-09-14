@@ -1,7 +1,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #define DISAS_DBG
 
@@ -70,6 +69,21 @@ typedef struct
   uint8_t bin;
 } Command;
 
+void
+regs_show ()
+{
+  int i;
+  for (i = 0; i < REGISTERS_DICT_SZ; i++)
+    printf ("%d ", REGISTERS_MEM[i]);
+  printf ("\n");
+}
+
+const char *
+reg_to_str (Register reg)
+{
+  return REGISTERS[reg];
+}
+
 const char *
 instr_to_str (Instruction instr)
 {
@@ -107,14 +121,8 @@ opcode_to_instr_mnem (uint8_t opcode)
     }
 }
 
-const char *
-reg_to_str (Register reg)
-{
-  return REGISTERS[reg];
-}
-
 void
-decode_and_set_instr (Command *cmd)
+cmd_decode_and_set_instr (Command *cmd)
 {
   int i;
   uint8_t cmd_msk;
@@ -142,12 +150,11 @@ decode_and_set_instr (Command *cmd)
         }
     }
 
-  fprintf (stderr, "Decode instr failed, %#x\n", cmd->bin);
-  abort ();
+  cmd->instr = opcode_to_instr_mnem (cmd->bin);
 }
 
 void
-decode_and_set_ops (Command *cmd)
+cmd_decode_and_set_ops (Command *cmd)
 {
   switch (cmd->instr)
     {
@@ -167,6 +174,10 @@ decode_and_set_ops (Command *cmd)
       cmd->op1 = cmd->bin & 0x3;
       cmd->op2 = 0;
       return;
+    case ILL_INSTR:
+      cmd->op1 = 0;
+      cmd->op2 = 0;
+      return;
     default:
       fprintf (stderr, "Failed to set operands: invalid instruction, %#x\n",
                cmd->bin);
@@ -180,50 +191,20 @@ cmd_decode (uint8_t *raw_cmd)
   Command cmd;
   cmd.bin = *raw_cmd;
 
-  decode_and_set_instr (&cmd);
-  decode_and_set_ops (&cmd);
+  cmd_decode_and_set_instr (&cmd);
+  cmd_decode_and_set_ops (&cmd);
 
   return cmd;
 }
 
 void
-dry_run (Command cmd)
+cmd_free (Command *cmd)
 {
-#ifndef DISAS_DBG
-  printf ("Hex instr: %#x\n", cmd.instr);
-  printf ("Instr mnem: %s\n", instr_to_str (cmd.instr));
-  printf ("Hex op1: %#x\n", cmd.op1);
-  printf ("Hex op2: %#x\n", cmd.op2);
-  printf ("Hex cmd: %#x\n", cmd.bin);
-  printf ("************************\n");
-#else
-  switch (cmd.instr)
-    {
-    case MOVI:
-      printf ("%s %d\n", instr_to_str (cmd.instr), cmd.op1);
-      return;
-    case ADD:
-    case SUB:
-    case MUL:
-    case DIV:
-      printf ("%s %s, %s\n", instr_to_str (cmd.instr),
-              reg_to_str ((Register)cmd.op1), reg_to_str ((Register)cmd.op2));
-      return;
-    case IN:
-    case OUT:
-      printf ("%s %s\n", instr_to_str (cmd.instr),
-              reg_to_str ((Register)cmd.op1));
-      return;
-    default:
-      fprintf (stderr, "Failed to set operands: corrupted instruction, %#x\n",
-               cmd.bin);
-      abort ();
-    }
-#endif
+  free (cmd);
 }
 
 uint8_t *
-read_nxt_cmd ()
+cmd_read_next ()
 {
   unsigned int tmp;
   uint8_t *cmd;
@@ -239,16 +220,116 @@ read_nxt_cmd ()
   return cmd;
 }
 
+typedef struct Programm
+{
+  struct Programm *next;
+  Command *cmd;
+} Programm;
+
+void
+prgm_exec (Programm *p)
+{
+  int tmp;
+  while (p && p->cmd)
+    {
+#ifndef DISAS_DBG
+      printf ("%#x\n", p->cmd->bin);
+#endif
+
+      switch (p->cmd->instr)
+        {
+        case MOVI:
+          REGISTERS_MEM[3] = p->cmd->op1;
+          break;
+        case ADD:
+          REGISTERS_MEM[p->cmd->op1] += REGISTERS_MEM[p->cmd->op2];
+          break;
+        case SUB:
+          REGISTERS_MEM[p->cmd->op1] -= REGISTERS_MEM[p->cmd->op2];
+          break;
+        case MUL:
+          REGISTERS_MEM[p->cmd->op1] *= REGISTERS_MEM[p->cmd->op2];
+          break;
+        case DIV:
+          REGISTERS_MEM[p->cmd->op1] /= REGISTERS_MEM[p->cmd->op2];
+          break;
+        case IN:
+          scanf ("%d", &tmp);
+          REGISTERS_MEM[p->cmd->op1] = tmp;
+          break;
+        case OUT:
+          printf ("%d\n", REGISTERS_MEM[p->cmd->op1]);
+          break;
+        case ILL_INSTR:
+          printf ("\n");
+          break;
+        default:
+          fprintf (stderr,
+                   "Failed to set operands: corrupted instruction, %#x\n",
+                   p->cmd->bin);
+          abort ();
+        }
+
+      p = p->next;
+    }
+}
+
+Programm *
+prgm_add_cmd (Programm *p, Command cmd)
+{
+  p->cmd = calloc (1, sizeof (Command));
+
+  p->cmd->instr = cmd.instr;
+  p->cmd->op1 = cmd.op1;
+  p->cmd->op2 = cmd.op2;
+  p->cmd->bin = cmd.bin;
+
+  p->next = calloc (1, sizeof (Programm));
+  p = p->next;
+
+  return p;
+}
+
+void
+prgm_free (Programm *p)
+{
+  Programm *tmp_nxt;
+
+  if (!p)
+    return;
+
+  while (p)
+    {
+      tmp_nxt = p->next;
+      cmd_free (p->cmd);
+      free (p);
+      p = tmp_nxt;
+    }
+}
+
 int
 main (void)
 {
   uint8_t *raw_cmd;
   Command cmd;
-  while ((raw_cmd = read_nxt_cmd ()) != NULL)
+  Programm *prg, *prg_tail;
+
+  prg = calloc (1, sizeof (Programm));
+  prg_tail = prg;
+
+  while ((raw_cmd = cmd_read_next ()) != NULL)
     {
       cmd = cmd_decode (raw_cmd);
+      if (cmd.instr == ILL_INSTR)
+        {
+          free (raw_cmd);
+          break;
+        }
 
-      dry_run (cmd);
+      prg_tail = prgm_add_cmd (prg_tail, cmd);
       free (raw_cmd);
     }
+
+  prgm_exec (prg);
+  prgm_free (prg);
 }
