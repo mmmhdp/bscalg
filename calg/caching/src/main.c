@@ -29,7 +29,7 @@ main (void)
       printf ("%d ", q[i]);
     }
   printf ("\n");
-  printf("Cache Hits cnt: %d\n", cache_hit_cnt);
+  printf ("Cache Hits cnt: %d\n", cache_hit_cnt);
 
   free (q);
 
