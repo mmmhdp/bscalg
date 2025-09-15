@@ -1,0 +1,5 @@
+*.cache/
+*build
+*libs
+*compile_commands.json
+.exrc
