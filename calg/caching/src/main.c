@@ -4,8 +4,9 @@
 int
 main (void)
 {
-  int i, tmp, nitems, cache_sz, q_sz, *q;
+  int i, tmp, cache_hit_cnt, nitems, cache_sz, q_sz, *q;
 
+  cache_hit_cnt = 0;
   nitems = scanf ("%d", &cache_sz);
   if (nitems != 1)
     exit (1);
@@ -28,6 +29,7 @@ main (void)
       printf ("%d ", q[i]);
     }
   printf ("\n");
+  printf("Cache Hits cnt: %d\n", cache_hit_cnt);
 
   free (q);
 

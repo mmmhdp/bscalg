@@ -1,4 +1,1 @@
-void
-hshtbl_init (void)
-{
-}
+#include "hshtbl.h"

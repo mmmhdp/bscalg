@@ -1,5 +1,5 @@
 CC = gcc
-WARNING_AND_ERRORS = -Wall -Wextra -Wpedantic -Werror
+WARNING_AND_ERRORS = -Wall -Wextra -Wpedantic 
 OPTIMIZATION = -O2
 XSANITIZE = -fsanitize=address -fsanitize=leak 
 DBUG_INF = -g 

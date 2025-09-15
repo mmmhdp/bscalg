@@ -1,4 +1,1 @@
-void
-llst_init (void)
-{
-}
+#include "llst.h"
