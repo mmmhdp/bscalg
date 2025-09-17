@@ -9,11 +9,11 @@ CFLAGS = $(DBUG_INF) \
 	 $(OPTIMIZATION) \
 	 $(INCLUDES)
 
-LDFLAGS = -L../libs -lc -lm -lcache
+LDFLAGS = -L../libs -lc -lm -lcache -lllst -lhshtbl
 
 INCLUDES = -I../include
 SRC_DIR = ./
-BUILD_DIR = ./build
+BUILD_DIR = ../build/benchmarks
 TESTS_DIR = ../tests
 TESTS_DATA_DIR = ../tests/data
 SCRIPTS_DIR = ./../scripts
