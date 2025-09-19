@@ -26,25 +26,28 @@ SOURCES = $(SRC_DIR)/main.c \
 
 TARGETS = $(BUILD_DIR)/main
 
-all: $(TARGETS) run
+all: $(TARGETS) mk-lib run-tests
 
 $(TARGETS): $(SOURCES)
 	mkdir -p "$(BUILD_DIR)" && \
 	mkdir -p "$(LIBS_DIR)" &&\
 	bear -- $(CC) $^ -o $@ $(CFLAGS) $(LDFLAGS)
 
+run-tests:
+	$(MAKE) -C ./tests
+
 mk-lib: mk-llst-lib mk-hshtbl-lib mk-cache-lib
 
 mk-llst-lib: 
-	gcc -c $(SRC_DIR)/llst.c $(INCLUDES) -o $(LIBS_DIR)/libllst.o && \
+	gcc -c $(SRC_DIR)/llst.c $(INCLUDES) -o $(LIBS_DIR)/libllst.o $(CFLAGS) && \
         ar rcs $(LIBS_DIR)/libllst.a $(LIBS_DIR)/libllst.o
 
 mk-hshtbl-lib: 
-	gcc -c $(SRC_DIR)/hshtbl.c $(INCLUDES) -o $(LIBS_DIR)/libhshtbl.o && \
+	gcc -c $(SRC_DIR)/hshtbl.c $(INCLUDES) -o $(LIBS_DIR)/libhshtbl.o $(CFLAGS) && \
         ar rcs $(LIBS_DIR)/libhshtbl.a $(LIBS_DIR)/libhshtbl.o
 
 mk-cache-lib: 
-	gcc -c $(SRC_DIR)/cache.c $(INCLUDES) -o libs/libcache.o && \
+	gcc -c $(SRC_DIR)/cache.c $(INCLUDES) -o libs/libcache.o $(CFLAGS) && \
         ar rcs libs/libcache.a libs/libcache.o
 	
 run:
