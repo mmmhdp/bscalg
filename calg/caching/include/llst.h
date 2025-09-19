@@ -8,7 +8,7 @@ llst_init (void);
 void
 llst_free (LLST *top);
 
-LLST *
+void
 llst_add_node (LLST *head, int value);
 
 /*
@@ -57,6 +57,9 @@ llst_convert_to_arr (LLST *top);
 
 void
 llst_print (LLST *top);
+
+void
+llst_print_node(LLST *node);
 
 int
 llst_get_len (LLST *top);

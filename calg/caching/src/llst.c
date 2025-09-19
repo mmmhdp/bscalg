@@ -15,6 +15,7 @@ typedef struct llst
 } LLST;
 
 LLST *
+
 llst_init (void)
 {
   LLST *head = calloc (1, sizeof (LLST));
@@ -50,19 +51,17 @@ llst__free_node (LLST *node)
   free (node);
 }
 
-LLST *
-llst_add_node (LLST *head, int value)
+void
+llst_add_node (LLST *top, int value)
 {
-  LLST *tmp = malloc (sizeof (LLST));
+  LLST *tmp = calloc (1, sizeof (LLST));
+
   tmp->v = value;
-  tmp->prev = head;
-  tmp->top = head->top;
+  tmp->prev = top->tail;
+  tmp->top = top->top;
+
+  top->tail->nxt = tmp;
   tmp->top->tail = tmp;
-
-  head->nxt = tmp;
-  head = head->nxt;
-
-  return head;
 }
 
 LLST *
@@ -185,23 +184,21 @@ llst_move_node_to_tail (LLST *node)
       exit (1);
     }
 
-  LLST *pnode, *cnode, *tmp_tail;
 
-  tmp_tail = node->top->tail;
-  assert (tmp_tail->nxt == NULL);
+  LLST *curr_tail, *prev, *nxt; 
 
-  pnode = node->prev;
-  cnode = node->nxt;
+  curr_tail = node->top->tail;
+  prev = node->prev;
+  nxt = node->nxt;
 
-  pnode->nxt = tmp_tail;
-  cnode->prev = tmp_tail;
+  prev->nxt = nxt;
+  nxt->prev = prev;
 
-  tmp_tail->prev->nxt = node;
-  node->prev = tmp_tail->prev;
+  curr_tail->nxt = node;
+  node->prev = curr_tail;
   node->nxt = NULL;
 
-  tmp_tail->prev = pnode;
-  tmp_tail->nxt = cnode;
+  node->top->tail = node;
 }
 
 int
@@ -244,14 +241,26 @@ llst_convert_to_arr (LLST *top)
   return arr;
 }
 
+void llst_print_node(LLST *node)
+{
+  if (node->nxt)
+    printf("prev %d curr %d nxt %d\n",
+           node->prev->v, node->v, node->nxt->v);
+  else
+    printf("prev %d curr %d\n",
+           node->prev->v, node->v);
+}
+
 void
 llst_print (LLST *top)
 {
   LLST *tmp;
+
+  top = top->nxt;
   while (top != NULL)
     {
-      tmp = top->nxt;
       printf ("%d ", top->v);
+      tmp = top->nxt;
       top = tmp;
     }
   printf ("\n");
