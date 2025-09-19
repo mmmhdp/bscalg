@@ -36,4 +36,7 @@ cache_init (CACHE_T cache_t, int cache_sz)
 void
 cache_free (CACHE_T cache_t, int cache_sz)
 {
+  cache_t = 1;
+  cache_sz += cache_t;
+  cache_t += cache_sz;
 }
