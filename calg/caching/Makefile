@@ -20,7 +20,7 @@ TESTS_DATA_DIR = tests/data
 SCRIPTS_DIR = ./scripts
 
 SOURCES = $(SRC_DIR)/main.c \
-	  $(SRC_DIR)/llst.c \
+	  $(SRC_DIR)/list.c \
 	  $(SRC_DIR)/hshtbl.c \
 	  $(SRC_DIR)/cache.c
 
@@ -36,11 +36,11 @@ $(TARGETS): $(SOURCES)
 run-tests:
 	$(MAKE) -C ./tests
 
-mk-lib: mk-llst-lib mk-hshtbl-lib mk-cache-lib
+mk-lib: mk-list-lib mk-hshtbl-lib mk-cache-lib
 
-mk-llst-lib: 
-	gcc -c $(SRC_DIR)/llst.c $(INCLUDES) -o $(LIBS_DIR)/libllst.o $(CFLAGS) && \
-        ar rcs $(LIBS_DIR)/libllst.a $(LIBS_DIR)/libllst.o
+mk-list-lib: 
+	gcc -c $(SRC_DIR)/list.c $(INCLUDES) -o $(LIBS_DIR)/liblist.o $(CFLAGS) && \
+        ar rcs $(LIBS_DIR)/liblist.a $(LIBS_DIR)/liblist.o
 
 mk-hshtbl-lib: 
 	gcc -c $(SRC_DIR)/hshtbl.c $(INCLUDES) -o $(LIBS_DIR)/libhshtbl.o $(CFLAGS) && \

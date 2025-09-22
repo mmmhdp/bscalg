@@ -9,7 +9,7 @@ CFLAGS = $(DBUG_INF) \
 	 $(OPTIMIZATION) \
 	 $(INCLUDES)
 
-LDFLAGS = -L../libs -lc -lm -lcache -lllst -lhshtbl
+LDFLAGS = -L../libs -lc -lm -lcache -lhshtbl -llist 
 
 INCLUDES = -I../include/
 LIBS_DIR = ../libs
@@ -17,7 +17,7 @@ SRC_DIR = ./
 BUILD_DIR = ../build/tests
 SCRIPTS_DIR = ../scripts
 
-SOURCES = $(SRC_DIR)/test_llst.c \
+SOURCES = $(SRC_DIR)/test_list.c \
 	  $(SRC_DIR)/test_hshtbl.c \
 	  $(SRC_DIR)/test_cache.c
 
