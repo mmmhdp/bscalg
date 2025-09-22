@@ -1,6 +1,6 @@
 #include "cache.h"
 #include "hshtbl.h"
-#include "llst.h"
+#include "list.h"
 
 #include <stdlib.h>
 
@@ -21,7 +21,7 @@ typedef struct cache
   CACHE_T cache_t;
   int cache_sz;
   HSHTBL *hst;
-  LLST *llst;
+  LIST *l;
 } CACHE;
 
 CACHE *
