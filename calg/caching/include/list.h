@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stddef.h>
+
 typedef struct list LIST;
 typedef struct node LIST_NODE;
 typedef struct node_data NODE_DATA;
@@ -9,7 +11,6 @@ list_init (void);
 
 void
 list_free (LIST *l);
-
 
 void
 list_add_node (LIST *l, void *v, int vsz);
@@ -30,19 +31,22 @@ list_node_find(LIST *l, LIST_NODE *n);
 
 
 LIST_NODE *
-llst_node_get_prev (LIST_NODE *n);
+list_node_get_prev (LIST_NODE *n);
 
 LIST_NODE *
 list_node_get_next (LIST_NODE *node);
-
-void *
-list_get_val (LIST *node);
 
 int
 list_get_len (LIST *l);
 
 NODE_DATA *
 list_node_data_get_data (LIST_NODE *n);
+
+void *
+list_node_data_get_value (NODE_DATA *d);
+
+size_t
+list_node_data_get_value_sz (NODE_DATA *d);
 
 LIST_NODE *
 list_get_top_node (LIST *l);
