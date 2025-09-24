@@ -82,5 +82,6 @@ clean:
 .PHONY: tests run clean format
 .SECONDARY: $(TESTS_OBJ)
 
-include $(DEPS)
+ALL_OBJ = $(wildcard $(OBJ_DIR)/*.o)
+include $(ALL_OBJ:%.o=%.d)
 
