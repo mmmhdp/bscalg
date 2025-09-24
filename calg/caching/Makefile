@@ -1,62 +1,86 @@
-CC = gcc
-WARNING_AND_ERRORS = -Wall -Wextra -Wpedantic 
-OPTIMIZATION = -O2
-XSANITIZE = -fsanitize=address -fsanitize=leak 
-DBUG_INF = -g 
-CFLAGS = $(DBUG_INF) \
-	 $(WARNING_AND_ERRORS) \
-	 $(XSANITIZE) \
-	 $(OPTIMIZATION) \
-	 $(INCLUDES)
+CFLAGS += -Wall -Wextra -Wpedantic 
+CFLAGS += -O2
+CFLAGS += -fsanitize=address -fsanitize=leak 
+CFLAGS += -g 
+CFLAGS += -I./$(INCLUDE_DIR)
+CFLAGS += -MMD -MP
 
-LDFLAGS = -lc -lm
+LDFLAGS  += -L./$(LIBS_DIR)
 
-INCLUDES = -I./include
-LIBS_DIR = libs
-SRC_DIR = src
-BUILD_DIR = build
+SRC_DIR     = src
+BUILD_DIR   = build
+OBJ_DIR     = $(BUILD_DIR)/obj
+LIBS_DIR    = $(BUILD_DIR)/libs
+INCLUDE_DIR = include
+SCRIPTS_DIR = scripts
+
+CSRCS   = $(SRC_DIR)/main.c \
+          $(SRC_DIR)/list.c \
+          $(SRC_DIR)/hshtbl.c \
+          $(SRC_DIR)/cache.c
+
+SRC_FILES = $(notdir $(CSRCS))
+COBJS     = $(SRC_FILES:%.c=$(OBJ_DIR)/%.o)
+
+LIST_OBJ    = $(OBJ_DIR)/list.o
+CACHE_OBJ   = $(OBJ_DIR)/cache.o
+HSHTBL_OBJ  = $(OBJ_DIR)/hshtbl.o
+MAIN_OBJ    = $(OBJ_DIR)/main.o
+
+LIST_LIB    = $(LIBS_DIR)/liblist.a
+CACHE_LIB   = $(LIBS_DIR)/libcache.a
+HSHTBL_LIB  = $(LIBS_DIR)/libhshtbl.a
+
+TESTS_BIN_DIR = $(BUILD_DIR)/tests
 TESTS_DIR = tests
-TESTS_DATA_DIR = tests/data
-SCRIPTS_DIR = ./scripts
+TESTS_SRCS = $(wildcard $(TESTS_DIR)/*.c)
+TESTS_FILES = $(notdir $(TESTS_SRCS))
+TESTS_OBJ = $(TESTS_FILES:%.c=$(OBJ_DIR)/%.test.o)
+TESTS_BIN = $(TESTS_FILES:%.c=$(TESTS_BIN_DIR)/%)
 
-SOURCES = $(SRC_DIR)/main.c \
-	  $(SRC_DIR)/list.c \
-	  $(SRC_DIR)/hshtbl.c \
-	  $(SRC_DIR)/cache.c
+TARGET = $(BUILD_DIR)/main
 
-TARGETS = $(BUILD_DIR)/main
+all: $(TARGET)
 
-all: $(TARGETS) mk-lib run-tests
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
+	bear -- $(CC) $(CFLAGS) -c $< -o $@ 
 
-$(TARGETS): $(SOURCES)
-	mkdir -p "$(BUILD_DIR)" && \
-	mkdir -p "$(LIBS_DIR)" &&\
-	bear -- $(CC) $^ -o $@ $(CFLAGS) $(LDFLAGS)
+$(LIST_LIB): $(LIST_OBJ) | $(LIBS_DIR)
+	ar rcs $@ $^
 
-run-tests:
-	$(MAKE) -C ./tests
+$(CACHE_LIB): $(CACHE_OBJ) | $(LIBS_DIR)
+	ar rcs $@ $^
 
-mk-lib: mk-list-lib mk-hshtbl-lib mk-cache-lib
+$(HSHTBL_LIB): $(HSHTBL_OBJ) | $(LIBS_DIR)
+	ar rcs $@ $^
 
-mk-list-lib: 
-	gcc -c $(SRC_DIR)/list.c $(INCLUDES) -o $(LIBS_DIR)/liblist.o $(CFLAGS) && \
-        ar rcs $(LIBS_DIR)/liblist.a $(LIBS_DIR)/liblist.o
+$(TARGET): $(MAIN_OBJ) $(LIST_LIB) $(CACHE_LIB) $(HSHTBL_LIB) | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS) -llist -lcache -lhshtbl
 
-mk-hshtbl-lib: 
-	gcc -c $(SRC_DIR)/hshtbl.c $(INCLUDES) -o $(LIBS_DIR)/libhshtbl.o $(CFLAGS) && \
-        ar rcs $(LIBS_DIR)/libhshtbl.a $(LIBS_DIR)/libhshtbl.o
+$(OBJ_DIR) $(LIBS_DIR) $(TESTS_BIN_DIR): 
+	mkdir -p $@
 
-mk-cache-lib: 
-	gcc -c $(SRC_DIR)/cache.c $(INCLUDES) -o libs/libcache.o $(CFLAGS) && \
-        ar rcs libs/libcache.a libs/libcache.o
-	
-run:
-	$(SCRIPTS_DIR)/run_main_test.sh -s $(TESTS_DATA_DIR)
+$(OBJ_DIR)/%.test.o: $(TESTS_DIR)/%.c | $(OBJ_DIR)
+	bear -- $(CC) $(CFLAGS) -c $< -o $@ 
+
+$(TESTS_BIN_DIR)/%: $(OBJ_DIR)/%.test.o  $(LIST_LIB) $(CACHE_LIB) $(HSHTBL_LIB) | $(TESTS_BIN_DIR)
+	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS) -llist -lcache -lhshtbl
+
+tests: $(TESTS_BIN)
+	$(SCRIPTS_DIR)/run_tests.sh -b $(TESTS_BIN_DIR) -a
+
+run: $(TARGET)
+	./build/main < ./tests/data/001.dat
 
 format:
 	$(SCRIPTS_DIR)/format.sh -s $(SRC_DIR)
+	$(SCRIPTS_DIR)/format.sh -s $(TESTS_DIR)
 
 clean:
-	rm -rf $(BUILD_DIR) $(LIBS_DIR)  && rm ./compile_commands.json
+	rm -rf $(BUILD_DIR)
 
-.PHONY: all clean run format mk-cache-lib
+.PHONY: tests run clean format
+.SECONDARY: $(TESTS_OBJ)
+
+include $(DEPS)
+
