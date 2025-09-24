@@ -2,9 +2,9 @@
 
 #include <assert.h>
 #include <stdint.h>
-#include <string.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "hshtbl.h"
 #include "list.h"
@@ -17,7 +17,7 @@
 
 typedef struct hshtbl
 {
-  uint32_t(*hsh_func) (char*, uint32_t);
+  uint32_t (*hsh_func) (char *, uint32_t);
   LIST **mem;
   uint32_t sz;
 } HSHTBL;
