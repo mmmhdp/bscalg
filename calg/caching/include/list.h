@@ -59,4 +59,4 @@ void **
 list_convert_to_arr (LIST *l);
 
 void
-list_print (LIST *l, void (*node_printer) (NODE_DATA *d));
+list_print (LIST *l, void (*node_printer) (NODE_DATA *d, int is_top_node));

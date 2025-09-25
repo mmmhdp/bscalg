@@ -88,12 +88,12 @@ list_free (LIST *l)
       return;
     }
 
-  while (t)
+  while (t != NULL)
     {
       tn = t->next;
+      list_delete_node (l, t);
       if (!tn)
         {
-          list_node_free (t);
           free (l);
           return;
         }
@@ -112,10 +112,16 @@ list_add_node (LIST *l, void *v, int vsz)
   d = list_node_data_init (v, vsz);
   n = list_node_init (d, l->tail, NULL);
 
+  l->list_len += 1;
+
+  if (l->top == NULL)
+  {
+    l->top = l->tail = n;
+    return;
+  }
+
   l->tail->next = n;
   l->tail = n;
-
-  l->list_len += 1;
 }
 
 static void
@@ -155,19 +161,35 @@ list_nodes_link (LIST *l, LIST_NODE *nparent, LIST_NODE *nchild)
 {
   LIST_NODE *tnp, *tnc;
 
+  /*
+   *  The only node in list without a parent is the top node
+   *  so we maintain a state of the whole list updating 
+   *  the top node value for list
+   */
   if (!nparent)
     {
       tnc = list_node_find (l, nchild);
       if (tnc)
+      {
         tnc->prev = NULL;
+        l->top = tnc;
+      }
       return 0;
     }
 
+  /*
+   *  The only node in list without a child is the tail node
+   *  so we maintain a state of the whole list updating 
+   *  the tail node value for list
+   */
   if (!nchild)
     {
       tnp = list_node_find (l, nparent);
       if (tnp)
+      {
         tnp->next = NULL;
+        l->tail = tnp;
+      }
       return 0;
     }
 
@@ -298,23 +320,25 @@ list_convert_to_arr (LIST *l)
 }
 
 void
-list_print (LIST *l, void (*node_printer) (NODE_DATA *d))
+list_print (LIST *l, void (*node_printer) (NODE_DATA *d, int is_top_node))
 {
   LIST_NODE *tn;
 
   tn = l->top;
   if (!tn)
     {
-      printf ("{Empty list}");
+      printf ("{Empty list}\n");
       return;
     }
 
+  node_printer(tn->data, TRUE);
+  
+  tn = tn->next;
   while (tn)
     {
-      node_printer (tn->data);
-      printf ("\n");
-
+      node_printer (tn->data, FALSE);
       tn = tn->next;
     }
+  node_printer (NULL, FALSE);
   printf ("\n");
 }
