@@ -13,6 +13,7 @@ OBJ_DIR     = $(BUILD_DIR)/obj
 LIBS_DIR    = $(BUILD_DIR)/libs
 INCLUDE_DIR = include
 SCRIPTS_DIR = scripts
+LIBS_LINK_ORDER = -lcache -lhshtbl -llist
 
 CSRCS   = $(SRC_DIR)/main.c \
           $(SRC_DIR)/list.c \
@@ -56,7 +57,7 @@ $(HSHTBL_LIB): $(HSHTBL_OBJ) | $(LIBS_DIR)
 	ar rcs $@ $^
 
 $(TARGET): $(MAIN_OBJ) $(LIST_LIB) $(CACHE_LIB) $(HSHTBL_LIB) | $(BUILD_DIR)
-	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS) -llist -lcache -lhshtbl
+	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS) $(LIBS_LINK_ORDER)
 
 $(OBJ_DIR) $(LIBS_DIR) $(TESTS_BIN_DIR): 
 	mkdir -p $@
@@ -65,7 +66,7 @@ $(OBJ_DIR)/%.test.o: $(TESTS_DIR)/%.c | $(OBJ_DIR)
 	bear -- $(CC) $(CFLAGS) $(TESTS_PPFLAGS) -c $< -o $@ 
 
 $(TESTS_BIN_DIR)/%: $(OBJ_DIR)/%.test.o  $(LIST_LIB) $(CACHE_LIB) $(HSHTBL_LIB) | $(TESTS_BIN_DIR)
-	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS) -llist -lcache -lhshtbl
+	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS) $(LIBS_LINK_ORDER)
 
 tests: $(TESTS_BIN)
 	$(SCRIPTS_DIR)/run_tests.sh -b $(TESTS_BIN_DIR) -a
