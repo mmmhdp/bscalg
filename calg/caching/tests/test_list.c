@@ -135,7 +135,7 @@ int
 main (void)
 {
 #ifdef TESTING
-  printf ("\nRUNNING TESTS:\n\n");
+  printf ("\nRUNNING %s:\n\n", __FILE__);
 
   test_list_init_and_free ();
   test_list_add_basic ();
