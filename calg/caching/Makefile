@@ -1,5 +1,5 @@
 CFLAGS += -Wall -Wextra -Wpedantic 
-CFLAGS += -O2
+CFLAGS += -O0
 CFLAGS += -fsanitize=address -fsanitize=leak 
 CFLAGS += -g 
 CFLAGS += -I./$(INCLUDE_DIR)
@@ -37,6 +37,7 @@ TESTS_SRCS = $(wildcard $(TESTS_DIR)/*.c)
 TESTS_FILES = $(notdir $(TESTS_SRCS))
 TESTS_OBJ = $(TESTS_FILES:%.c=$(OBJ_DIR)/%.test.o)
 TESTS_BIN = $(TESTS_FILES:%.c=$(TESTS_BIN_DIR)/%)
+TESTS_PPFLAGS = -DTESTING -DVERBOSE
 
 TARGET = $(BUILD_DIR)/main
 
@@ -61,7 +62,7 @@ $(OBJ_DIR) $(LIBS_DIR) $(TESTS_BIN_DIR):
 	mkdir -p $@
 
 $(OBJ_DIR)/%.test.o: $(TESTS_DIR)/%.c | $(OBJ_DIR)
-	bear -- $(CC) $(CFLAGS) -c $< -o $@ 
+	bear -- $(CC) $(CFLAGS) $(TESTS_PPFLAGS) -c $< -o $@ 
 
 $(TESTS_BIN_DIR)/%: $(OBJ_DIR)/%.test.o  $(LIST_LIB) $(CACHE_LIB) $(HSHTBL_LIB) | $(TESTS_BIN_DIR)
 	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS) -llist -lcache -lhshtbl
