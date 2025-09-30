@@ -77,6 +77,7 @@ run: $(TARGET)
 format:
 	$(SCRIPTS_DIR)/format.sh -s $(SRC_DIR)
 	$(SCRIPTS_DIR)/format.sh -s $(TESTS_DIR)
+	$(SCRIPTS_DIR)/format.sh -s $(INCLUDE_DIR)
 
 clean:
 	rm -rf $(BUILD_DIR)
