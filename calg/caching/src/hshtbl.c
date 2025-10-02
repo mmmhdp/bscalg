@@ -253,6 +253,8 @@ ht_delete (HSH_TBL *ht, char *key, unsigned long key_len)
   hline_free (hl);
 
   ht->hlines[hash] = hline_init ();
+
+  key_free (k);
 }
 
 static void
@@ -313,11 +315,24 @@ ht_find (HSH_TBL *ht, char *key, unsigned long key_len)
   hl = ht->hlines[hash];
 
   if (hl->last_inserted_key == NULL)
-    return NULL;
+    {
+      key_free (k);
+      return NULL;
+    }
 
   n = list_get_tail_node (hl->line);
   d = list_node_get_data (n);
   v = list_node_data_get_value (d);
 
+  key_free (k);
   return v;
+}
+
+void *
+ht_get_value (HSH_VAL *v)
+{
+  if (v == NULL)
+    return NULL;
+
+  return v->val;
 }

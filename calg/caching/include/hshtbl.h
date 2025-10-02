@@ -25,3 +25,5 @@ void ht_delete (HSH_TBL *ht, char *key, unsigned long key_len);
 void ht_print (HSH_TBL *ht);
 
 HSH_VAL *ht_find (HSH_TBL *ht, char *key, unsigned long key_len);
+
+void *ht_get_value (HSH_VAL *v);
