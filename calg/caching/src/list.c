@@ -50,7 +50,7 @@ list_node_get_next (LIST_NODE *n)
 }
 
 NODE_DATA *
-list_node_data_get_data (LIST_NODE *n)
+list_node_get_data (LIST_NODE *n)
 {
   return n->data;
 }

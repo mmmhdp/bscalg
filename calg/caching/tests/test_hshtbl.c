@@ -9,7 +9,7 @@ void
 test_hshtbl_init_and_free (void)
 {
 #ifdef VERBOSE
-  TEST_BEGIN();
+  TEST_BEGIN ();
 #endif
 
   int ht_sz;
@@ -29,7 +29,7 @@ void
 test_hshtbl_add_basic (void)
 {
 #ifdef VERBOSE
-  TEST_BEGIN();
+  TEST_BEGIN ();
 #endif
 
   int ht_sz, value, v_sz;
@@ -39,12 +39,12 @@ test_hshtbl_add_basic (void)
   ht = ht_init (ht_sz);
 
   value = 4;
-  v_sz = sizeof(int);
+  v_sz = sizeof (int);
 
-  ht_add(ht, "Foo", strlen("Foo"), &value, v_sz);
+  ht_add (ht, "Foo", strlen ("Foo"), &value, v_sz);
 
 #ifdef VERBOSE
-  ht_print(ht);
+  ht_print (ht);
 #endif
 
   goto cleanup;
@@ -55,15 +55,13 @@ cleanup:
 }
 
 static const int key_mocks_len = 5;
-static const char * key_mocks [] = {
-  "Foo", "Boo", "Zoo", "Buzz", "Fuzz"
-};
+static const char *key_mocks[] = { "Foo", "Boo", "Zoo", "Buzz", "Fuzz" };
 
 void
 test_hshtbl_add_complex (void)
 {
 #ifdef VERBOSE
-  TEST_BEGIN();
+  TEST_BEGIN ();
 #endif
 
   int i, ht_sz, value, v_sz;
@@ -74,15 +72,15 @@ test_hshtbl_add_complex (void)
   ht = ht_init (ht_sz);
 
   for (i = 0; i < 5; i++)
-  {
-    value = i;
-    v_sz = sizeof(int);
-    key = (char *) key_mocks[i % key_mocks_len];
-    ht_add(ht, key, strlen(key), &value, v_sz);
-  }
+    {
+      value = i;
+      v_sz = sizeof (int);
+      key = (char *)key_mocks[i % key_mocks_len];
+      ht_add (ht, key, strlen (key), &value, v_sz);
+    }
 
 #ifdef VERBOSE
-  ht_print(ht);
+  ht_print (ht);
 #endif
 
   goto cleanup;

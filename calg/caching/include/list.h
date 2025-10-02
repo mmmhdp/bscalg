@@ -38,7 +38,7 @@ LIST_NODE *list_node_get_next (LIST_NODE *node);
 
 int list_get_len (LIST *l);
 
-NODE_DATA *list_node_data_get_data (LIST_NODE *n);
+NODE_DATA *list_node_get_data (LIST_NODE *n);
 
 void *list_node_data_get_value (NODE_DATA *d);
 

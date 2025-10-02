@@ -9,7 +9,7 @@ void
 test_list_init_and_free (void)
 {
 #ifdef VERBOSE
-  TEST_BEGIN();
+  TEST_BEGIN ();
 #endif
 
   LIST *l;
@@ -35,7 +35,7 @@ void
 test_list_init_and_free_by_caller (void)
 {
 #ifdef VERBOSE
-  TEST_BEGIN();
+  TEST_BEGIN ();
 #endif
 
   LIST *l;
@@ -77,7 +77,7 @@ void
 test_list_add_basic (void)
 {
 #ifdef VERBOSE
-  TEST_BEGIN();
+  TEST_BEGIN ();
 #endif
 
   LIST *l;
@@ -111,7 +111,7 @@ void
 test_list_add_by_caller_basic (void)
 {
 #ifdef VERBOSE
-  TEST_BEGIN();
+  TEST_BEGIN ();
 #endif
 
   LIST *l;
@@ -211,7 +211,7 @@ void
 test_list_add_by_caller_with_nested_node_val (void)
 {
 #ifdef VERBOSE
-  TEST_BEGIN();
+  TEST_BEGIN ();
 #endif
 
   LIST *l;
@@ -248,7 +248,7 @@ void
 test_list_add_complex_case (void)
 {
 #ifdef VERBOSE
-  TEST_BEGIN();
+  TEST_BEGIN ();
 #endif
 
   LIST *l;
@@ -279,7 +279,7 @@ void
 test_list_move_node_to_tail (void)
 {
 #ifdef VERBOSE
-  TEST_BEGIN();
+  TEST_BEGIN ();
 #endif
 
   LIST *l;
@@ -298,7 +298,7 @@ test_list_move_node_to_tail (void)
 
 #ifdef VERBOSE
   list_print (l, int_printer);
-  printf("\n");
+  printf ("\n");
 #endif
 
   for (i = 0; i < 3; i++)
@@ -308,7 +308,7 @@ test_list_move_node_to_tail (void)
 
 #ifdef VERBOSE
       list_print (l, int_printer);
-      printf("\n");
+      printf ("\n");
 #endif
     }
 
