@@ -115,10 +115,10 @@ list_add_node (LIST *l, void *v, int vsz)
   l->list_len += 1;
 
   if (l->top == NULL)
-  {
-    l->top = l->tail = n;
-    return;
-  }
+    {
+      l->top = l->tail = n;
+      return;
+    }
 
   l->tail->next = n;
   l->tail = n;
@@ -163,33 +163,33 @@ list_nodes_link (LIST *l, LIST_NODE *nparent, LIST_NODE *nchild)
 
   /*
    *  The only node in list without a parent is the top node
-   *  so we maintain a state of the whole list updating 
+   *  so we maintain a state of the whole list updating
    *  the top node value for list
    */
   if (!nparent)
     {
       tnc = list_node_find (l, nchild);
       if (tnc)
-      {
-        tnc->prev = NULL;
-        l->top = tnc;
-      }
+        {
+          tnc->prev = NULL;
+          l->top = tnc;
+        }
       return 0;
     }
 
   /*
    *  The only node in list without a child is the tail node
-   *  so we maintain a state of the whole list updating 
+   *  so we maintain a state of the whole list updating
    *  the tail node value for list
    */
   if (!nchild)
     {
       tnp = list_node_find (l, nparent);
       if (tnp)
-      {
-        tnp->next = NULL;
-        l->tail = tnp;
-      }
+        {
+          tnp->next = NULL;
+          l->tail = tnp;
+        }
       return 0;
     }
 
@@ -331,8 +331,8 @@ list_print (LIST *l, void (*node_printer) (NODE_DATA *d, int is_top_node))
       return;
     }
 
-  node_printer(tn->data, TRUE);
-  
+  node_printer (tn->data, TRUE);
+
   tn = tn->next;
   while (tn)
     {

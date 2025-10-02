@@ -28,17 +28,17 @@ int_printer (NODE_DATA *d, int is_top_node)
   int *itv;
 
   if (!d)
-  {
-    printf ("(NULL node)");
-    return;
-  }
+    {
+      printf ("(NULL node)");
+      return;
+    }
 
   tv = list_node_data_get_value (d);
 
   itv = (int *)tv;
   if (is_top_node)
     printf ("(top node val : %d)-> ", *itv);
-  else 
+  else
     printf ("(node val : %d)-> ", *itv);
 }
 #endif
@@ -115,14 +115,14 @@ test_list_move_node_to_tail (void)
 #endif
 
   for (i = 0; i < 3; i++)
-  {
-    tn = list_get_top_node(l);
-    list_move_node_to_tail(l, tn);
+    {
+      tn = list_get_top_node (l);
+      list_move_node_to_tail (l, tn);
 
 #ifdef VERBOSE
-    list_print (l, int_printer);
+      list_print (l, int_printer);
 #endif
-  }
+    }
 
   goto cleanup;
 
