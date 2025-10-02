@@ -92,6 +92,40 @@ list_init (void)
   return l;
 }
 
+static NODE_DATA *
+list_node_data_init (void *v, size_t vsz)
+{
+  NODE_DATA *d;
+  d = calloc (1, sizeof (NODE_DATA));
+  d->value = malloc (sizeof (vsz));
+
+  memcpy (d->value, v, vsz);
+  d->sz = vsz;
+  return d;
+}
+
+static NODE_DATA *
+list_node_data_init_by_caller (void *v, size_t vsz,
+                               void *(*val_copy) (void *v, void **dst))
+{
+  NODE_DATA *d;
+  d = calloc (1, sizeof (NODE_DATA));
+
+  val_copy (&(d->value), v);
+  d->sz = vsz;
+  return d;
+}
+
+static LIST_NODE *
+list_node_init (NODE_DATA *data, LIST_NODE *prev, LIST_NODE *next)
+{
+  LIST_NODE *n = calloc (1, sizeof (LIST_NODE));
+  n->next = next;
+  n->prev = prev;
+  n->data = data;
+  return n;
+}
+
 static void
 list_node_data_free (NODE_DATA *d)
 {
@@ -237,26 +271,14 @@ list_delete_node_by_caller (LIST *l, LIST_NODE *n,
   return 0;
 }
 
-static NODE_DATA *
-list_node_data_init (void *v, size_t vsz)
+static void
+list_add_complete_node (LIST *l, LIST_NODE *n)
 {
-  NODE_DATA *d;
-  d = calloc (1, sizeof (NODE_DATA));
-  d->value = malloc (sizeof (vsz));
+  n->next = NULL;
+  l->tail->next = n;
+  l->tail = n;
 
-  memcpy (d->value, v, vsz);
-  d->sz = vsz;
-  return d;
-}
-
-static LIST_NODE *
-list_node_init (NODE_DATA *data, LIST_NODE *prev, LIST_NODE *next)
-{
-  LIST_NODE *n = calloc (1, sizeof (LIST_NODE));
-  n->next = next;
-  n->prev = prev;
-  n->data = data;
-  return n;
+  l->list_len += 1;
 }
 
 void
@@ -280,14 +302,26 @@ list_add_node (LIST *l, void *v, int vsz)
   l->tail = n;
 }
 
-static void
-list_add_complete_node (LIST *l, LIST_NODE *n)
+void
+list_add_node_by_caller (LIST *l, void *v, int vsz,
+                         void *(*val_copy) (void *v, void **dst))
 {
-  n->next = NULL;
-  l->tail->next = n;
-  l->tail = n;
+  NODE_DATA *d;
+  LIST_NODE *n;
+
+  d = list_node_data_init_by_caller (v, vsz, val_copy);
+  n = list_node_init (d, l->tail, NULL);
 
   l->list_len += 1;
+
+  if (l->top == NULL)
+    {
+      l->top = l->tail = n;
+      return;
+    }
+
+  l->tail->next = n;
+  l->tail = n;
 }
 
 LIST_NODE *
