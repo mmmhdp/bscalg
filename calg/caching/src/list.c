@@ -106,7 +106,8 @@ list_node_data_init (void *v, size_t vsz)
 
 static NODE_DATA *
 list_node_data_init_by_caller (void *v, size_t vsz,
-                               void (*val_copy) (void **dst, void *v, size_t v_sz))
+                               void (*val_copy) (void **dst, void *v,
+                                                 size_t v_sz))
 {
   NODE_DATA *d;
 
