@@ -104,8 +104,8 @@ key_init (char *key, unsigned long key_len)
 
   k = calloc (1, sizeof (HSH_KEY));
   k->key = malloc (key_len + 1);
-  key[key_len] = '\0';
-  strcpy (k->key, key);
+  memcpy (k->key, key, key_len);
+  k->key[key_len] = '\0';
 
   k->key_len = key_len;
 
@@ -129,6 +129,8 @@ val_init (void *value, size_t v_sz)
 static void
 key_free (HSH_KEY *k)
 {
+  if (k == NULL)
+    return;
   free (k->key);
   free (k);
 }
@@ -136,6 +138,8 @@ key_free (HSH_KEY *k)
 static void
 val_free (HSH_VAL *v)
 {
+  if (v == NULL)
+    return;
   free (v->val);
   free (v);
 }
@@ -161,6 +165,9 @@ ht_free (HSH_TBL *ht)
 {
   int i;
 
+  if (ht == NULL)
+    return;
+
   for (i = 0; i < ht->capacity; i++)
     hline_free (ht->hlines[i]);
 
@@ -173,13 +180,14 @@ val_copy (void **dst, void *v, size_t v_sz)
 {
   HSH_VAL *tv, *tdst;
   tv = v;
-  tdst = *dst;
 
   tdst = malloc (v_sz);
   memcpy (tdst, v, v_sz);
 
   tdst->val = malloc (tv->sz);
   memcpy (tdst->val, tv->val, tv->sz);
+
+  *dst = tdst;
 }
 
 static void
@@ -226,20 +234,17 @@ line_node_data_printer_with_int_inner_value (NODE_DATA *d, int is_top_node)
   if (d == NULL)
     {
       printf ("(NULL node)");
+      return;
     }
 
   v = list_node_data_get_value (d);
   tv = (HSH_VAL *)v;
-  value = *((int *)tv);
+  value = *((int *)tv->val);
 
   if (is_top_node)
-    {
-      printf ("(Top node val: %d)->", value);
-    }
+      printf ("(Top node: %d)->", value);
   else
-    {
-      printf ("(Node val: %d)->", value);
-    }
+      printf ("(Node: %d)->", value);
 }
 
 void
@@ -251,10 +256,13 @@ ht_print (HSH_TBL *ht)
   for (i = 0; i < ht->capacity; i++)
     {
       hl = ht->hlines[i];
-      printf ("Key: [%s] >-<", hl->last_inserted_key->key);
+      if (hl->last_inserted_key == NULL)
+      {
+        printf ("Key: [empty] \n");
+        continue;
+      }
+      printf ("Key: [%s] ", hl->last_inserted_key->key);
       list_print (hl->line, line_node_data_printer_with_int_inner_value);
       printf ("\n");
     }
-
-  printf ("\n");
 }
