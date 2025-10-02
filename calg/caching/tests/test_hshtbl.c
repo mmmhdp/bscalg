@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "hshtbl.h"
 #include "utils.h"
@@ -19,6 +20,65 @@ cleanup:
   ht_free (ht);
 }
 
+void
+test_hshtbl_add_basic (void)
+{
+  int ht_sz, value, v_sz;
+  HSH_TBL *ht;
+
+  ht_sz = 10;
+  ht = ht_init (ht_sz);
+
+  value = 4;
+  v_sz = sizeof(int);
+
+  ht_add(ht, "Foo", strlen("Foo"), &value, v_sz);
+
+#ifdef VERBOSE
+  ht_print(ht);
+  printf("\n");
+#endif
+
+  goto cleanup;
+
+cleanup:
+  ht_free (ht);
+}
+
+static const int key_mocks_len = 5;
+static const char * key_mocks [] = {
+  "Foo", "Boo", "Zoo", "Buzz", "Fuzz"
+};
+
+void
+test_hshtbl_add_complex (void)
+{
+  int i, ht_sz, value, v_sz;
+  char *key;
+  HSH_TBL *ht;
+
+  ht_sz = 10;
+  ht = ht_init (ht_sz);
+
+  for (i = 0; i < 5; i++)
+  {
+    value = i;
+    v_sz = sizeof(int);
+    key = (char *) key_mocks[i % key_mocks_len];
+    ht_add(ht, key, strlen(key), &value, v_sz);
+  }
+
+#ifdef VERBOSE
+  ht_print(ht);
+  printf("\n");
+#endif
+
+  goto cleanup;
+
+cleanup:
+  ht_free (ht);
+}
+
 int
 main (void)
 {
@@ -26,6 +86,8 @@ main (void)
   printf ("\nRUNNING %s:\n\n", __FILE__);
 
   test_hshtbl_init_and_free ();
+  test_hshtbl_add_basic ();
+  test_hshtbl_add_complex ();
 
   printf ("\nTESTS ARE COMPLETED\n");
 #endif
