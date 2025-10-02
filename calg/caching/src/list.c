@@ -106,12 +106,13 @@ list_node_data_init (void *v, size_t vsz)
 
 static NODE_DATA *
 list_node_data_init_by_caller (void *v, size_t vsz,
-                               void *(*val_copy) (void *v, void **dst))
+                               void (*val_copy) (void **dst, void *v, size_t v_sz))
 {
   NODE_DATA *d;
-  d = calloc (1, sizeof (NODE_DATA));
 
-  val_copy (&(d->value), v);
+  d = calloc (1, sizeof (NODE_DATA));
+  val_copy (&(d->value), v, vsz);
+
   d->sz = vsz;
   return d;
 }
@@ -304,7 +305,7 @@ list_add_node (LIST *l, void *v, int vsz)
 
 void
 list_add_node_by_caller (LIST *l, void *v, int vsz,
-                         void *(*val_copy) (void *v, void **dst))
+                         void (*val_copy) (void **dst, void *v, size_t v_sz))
 {
   NODE_DATA *d;
   LIST_NODE *n;
