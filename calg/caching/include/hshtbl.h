@@ -17,3 +17,8 @@ typedef struct hsh_tbl HSH_TBL;
 HSH_TBL *ht_init (int ht_sz);
 
 void ht_free (HSH_TBL *ht);
+
+void ht_add (HSH_TBL *ht, char *key, unsigned long key_len, void *value,
+             size_t v_sz);
+
+void ht_print (HSH_TBL *ht);
