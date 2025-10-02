@@ -42,7 +42,7 @@ TESTS_PPFLAGS = -DTESTING -DVERBOSE
 
 TARGET = $(BUILD_DIR)/main
 
-all: $(TARGET)
+all: $(TARGET) format
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
 	bear -- $(CC) $(CFLAGS) -c $< -o $@ 
@@ -68,7 +68,7 @@ $(OBJ_DIR)/%.test.o: $(TESTS_DIR)/%.c | $(OBJ_DIR)
 $(TESTS_BIN_DIR)/%: $(OBJ_DIR)/%.test.o  $(LIST_LIB) $(CACHE_LIB) $(HSHTBL_LIB) | $(TESTS_BIN_DIR)
 	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS) $(LIBS_LINK_ORDER)
 
-tests: $(TESTS_BIN)
+tests: $(TESTS_BIN) format
 	$(SCRIPTS_DIR)/run_tests.sh -b $(TESTS_BIN_DIR) -a
 
 run: $(TARGET)
