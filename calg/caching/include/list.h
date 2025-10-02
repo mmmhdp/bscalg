@@ -15,7 +15,8 @@ void list_free_by_caller (LIST *l, void (*free_val) (NODE_DATA *d));
 void list_add_node (LIST *l, void *v, int vsz);
 
 void list_add_node_by_caller (LIST *l, void *v, int vsz,
-                              void (*val_copy) (void **dst, void *v, size_t v_sz));
+                              void (*val_copy) (void **dst, void *v,
+                                                size_t v_sz));
 
 /*
  * Returns
@@ -37,7 +38,7 @@ LIST_NODE *list_node_get_next (LIST_NODE *node);
 
 int list_get_len (LIST *l);
 
-NODE_DATA *list_node_data_get_data (LIST_NODE *n);
+NODE_DATA *list_node_get_data (LIST_NODE *n);
 
 void *list_node_data_get_value (NODE_DATA *d);
 

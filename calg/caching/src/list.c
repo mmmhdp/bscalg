@@ -50,7 +50,7 @@ list_node_get_next (LIST_NODE *n)
 }
 
 NODE_DATA *
-list_node_data_get_data (LIST_NODE *n)
+list_node_get_data (LIST_NODE *n)
 {
   return n->data;
 }
@@ -106,7 +106,8 @@ list_node_data_init (void *v, size_t vsz)
 
 static NODE_DATA *
 list_node_data_init_by_caller (void *v, size_t vsz,
-                               void (*val_copy) (void **dst, void *v, size_t v_sz))
+                               void (*val_copy) (void **dst, void *v,
+                                                 size_t v_sz))
 {
   NODE_DATA *d;
 
@@ -445,7 +446,7 @@ list_print (LIST *l, void (*node_printer) (NODE_DATA *d, int is_top_node))
   tn = l->top;
   if (!tn)
     {
-      printf ("{Empty list}\n");
+      printf ("{Empty list}");
       return;
     }
 
@@ -458,5 +459,4 @@ list_print (LIST *l, void (*node_printer) (NODE_DATA *d, int is_top_node))
       tn = tn->next;
     }
   node_printer (NULL, FALSE);
-  printf ("\n");
 }

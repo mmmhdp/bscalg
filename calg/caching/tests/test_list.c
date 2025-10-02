@@ -8,6 +8,9 @@
 void
 test_list_init_and_free (void)
 {
+#ifdef VERBOSE
+  TEST_BEGIN ();
+#endif
 
   LIST *l;
 
@@ -21,15 +24,19 @@ cleanup:
   list_free (l);
 }
 
-void free_val (NODE_DATA *d)
+void
+free_val (NODE_DATA *d)
 {
-  void *v = list_node_data_get_value(d);
-  free(v);
+  void *v = list_node_data_get_value (d);
+  free (v);
 }
 
 void
 test_list_init_and_free_by_caller (void)
 {
+#ifdef VERBOSE
+  TEST_BEGIN ();
+#endif
 
   LIST *l;
 
@@ -69,6 +76,10 @@ int_printer (NODE_DATA *d, int is_top_node)
 void
 test_list_add_basic (void)
 {
+#ifdef VERBOSE
+  TEST_BEGIN ();
+#endif
+
   LIST *l;
   int a;
 
@@ -89,15 +100,20 @@ cleanup:
   TEST_PASSED ();
 }
 
-void val_copy (void **dst, void *v, size_t v_sz)
+void
+val_copy (void **dst, void *v, size_t v_sz)
 {
-  *dst = malloc(v_sz);
-  memcpy(*dst, v, v_sz);
+  *dst = malloc (v_sz);
+  memcpy (*dst, v, v_sz);
 }
 
 void
 test_list_add_by_caller_basic (void)
 {
+#ifdef VERBOSE
+  TEST_BEGIN ();
+#endif
+
   LIST *l;
   int a;
 
@@ -124,42 +140,46 @@ struct nested_val
   int mem_sz;
 };
 
-struct nested_val * create_nested_val(int x)
+struct nested_val *
+create_nested_val (int x)
 {
   struct nested_val *nv;
 
-  nv = malloc(sizeof(struct nested_val));
-  nv->mem_sz = sizeof(int);
-  nv->mem = malloc(nv->mem_sz);
-  memcpy (nv->mem, &x, sizeof(int));
+  nv = malloc (sizeof (struct nested_val));
+  nv->mem_sz = sizeof (int);
+  nv->mem = malloc (nv->mem_sz);
+  memcpy (nv->mem, &x, sizeof (int));
 
   return nv;
 }
 
-void base_free_nested_val (struct nested_val * nv)
+void
+base_free_nested_val (struct nested_val *nv)
 {
-  free(nv->mem);
-  free(nv);
+  free (nv->mem);
+  free (nv);
 }
 
-void free_nested_val (NODE_DATA *d)
+void
+free_nested_val (NODE_DATA *d)
 {
-  struct nested_val *v = (struct nested_val *) list_node_data_get_value(d);
+  struct nested_val *v = (struct nested_val *)list_node_data_get_value (d);
 
-  free(v->mem);
-  free(v);
+  free (v->mem);
+  free (v);
 }
 
-void nested_val_copy (void **dst, void *v, size_t v_sz)
+void
+nested_val_copy (void **dst, void *v, size_t v_sz)
 {
-  struct nested_val *tmp = (struct nested_val *) v;
+  struct nested_val *tmp = (struct nested_val *)v;
   struct nested_val *buff;
-  
-  buff = malloc(v_sz);
-  memcpy(buff, tmp, v_sz);
 
-  buff->mem = calloc(tmp->mem_sz, 1);
-  memcpy(buff->mem, tmp->mem, tmp->mem_sz);
+  buff = malloc (v_sz);
+  memcpy (buff, tmp, v_sz);
+
+  buff->mem = calloc (tmp->mem_sz, 1);
+  memcpy (buff->mem, tmp->mem, tmp->mem_sz);
 
   *dst = buff;
 }
@@ -177,9 +197,9 @@ nested_val_printer (NODE_DATA *d, int is_top_node)
       return;
     }
 
-  tv = (struct nested_val *) list_node_data_get_value(d);
+  tv = (struct nested_val *)list_node_data_get_value (d);
 
-  itv = (int *) tv->mem;
+  itv = (int *)tv->mem;
   if (is_top_node)
     printf ("(top node val : %d)-> ", *itv);
   else
@@ -190,18 +210,25 @@ nested_val_printer (NODE_DATA *d, int is_top_node)
 void
 test_list_add_by_caller_with_nested_node_val (void)
 {
+#ifdef VERBOSE
+  TEST_BEGIN ();
+#endif
+
   LIST *l;
   struct nested_val *nv1, *nv2, *nv3;
 
   l = list_init ();
 
-  nv1 = create_nested_val(3);
-  nv2 = create_nested_val(4);
-  nv3 = create_nested_val(5);
+  nv1 = create_nested_val (3);
+  nv2 = create_nested_val (4);
+  nv3 = create_nested_val (5);
 
-  list_add_node_by_caller (l, nv1, sizeof (struct nested_val), nested_val_copy);
-  list_add_node_by_caller (l, nv2, sizeof (struct nested_val), nested_val_copy);
-  list_add_node_by_caller (l, nv3, sizeof (struct nested_val), nested_val_copy);
+  list_add_node_by_caller (l, nv1, sizeof (struct nested_val),
+                           nested_val_copy);
+  list_add_node_by_caller (l, nv2, sizeof (struct nested_val),
+                           nested_val_copy);
+  list_add_node_by_caller (l, nv3, sizeof (struct nested_val),
+                           nested_val_copy);
 
 #ifdef VERBOSE
   list_print (l, nested_val_printer);
@@ -211,15 +238,19 @@ test_list_add_by_caller_with_nested_node_val (void)
 
 cleanup:
   list_free_by_caller (l, free_nested_val);
-  base_free_nested_val(nv1);
-  base_free_nested_val(nv2);
-  base_free_nested_val(nv3);
+  base_free_nested_val (nv1);
+  base_free_nested_val (nv2);
+  base_free_nested_val (nv3);
   TEST_PASSED ();
 }
 
 void
 test_list_add_complex_case (void)
 {
+#ifdef VERBOSE
+  TEST_BEGIN ();
+#endif
+
   LIST *l;
   int a, b, c;
 
@@ -247,6 +278,10 @@ cleanup:
 void
 test_list_move_node_to_tail (void)
 {
+#ifdef VERBOSE
+  TEST_BEGIN ();
+#endif
+
   LIST *l;
   LIST_NODE *tn;
   int i, a, b, c;
@@ -263,6 +298,7 @@ test_list_move_node_to_tail (void)
 
 #ifdef VERBOSE
   list_print (l, int_printer);
+  printf ("\n");
 #endif
 
   for (i = 0; i < 3; i++)
@@ -272,6 +308,7 @@ test_list_move_node_to_tail (void)
 
 #ifdef VERBOSE
       list_print (l, int_printer);
+      printf ("\n");
 #endif
     }
 

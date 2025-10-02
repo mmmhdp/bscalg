@@ -14,8 +14,16 @@ typedef NODE_DATA HSH_LINE_NODE_DATA;
 
 typedef struct hsh_tbl HSH_TBL;
 
-HSHTBL *ht_init (int hash_table_size);
+HSH_TBL *ht_init (int ht_sz);
 
-void ht_free (HSHTBL *ht);
+void ht_free (HSH_TBL *ht);
 
-void ht_print (HSHTBL *ht);
+void ht_add (HSH_TBL *ht, char *key, unsigned long key_len, void *value,
+             size_t v_sz);
+void ht_delete (HSH_TBL *ht, char *key, unsigned long key_len);
+
+void ht_print (HSH_TBL *ht);
+
+HSH_VAL *ht_find (HSH_TBL *ht, char *key, unsigned long key_len);
+
+void *ht_get_value (HSH_VAL *v);
