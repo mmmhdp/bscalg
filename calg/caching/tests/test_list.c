@@ -8,6 +8,9 @@
 void
 test_list_init_and_free (void)
 {
+#ifdef VERBOSE
+  TEST_BEGIN();
+#endif
 
   LIST *l;
 
@@ -31,6 +34,9 @@ free_val (NODE_DATA *d)
 void
 test_list_init_and_free_by_caller (void)
 {
+#ifdef VERBOSE
+  TEST_BEGIN();
+#endif
 
   LIST *l;
 
@@ -70,6 +76,10 @@ int_printer (NODE_DATA *d, int is_top_node)
 void
 test_list_add_basic (void)
 {
+#ifdef VERBOSE
+  TEST_BEGIN();
+#endif
+
   LIST *l;
   int a;
 
@@ -100,6 +110,10 @@ val_copy (void **dst, void *v, size_t v_sz)
 void
 test_list_add_by_caller_basic (void)
 {
+#ifdef VERBOSE
+  TEST_BEGIN();
+#endif
+
   LIST *l;
   int a;
 
@@ -196,6 +210,10 @@ nested_val_printer (NODE_DATA *d, int is_top_node)
 void
 test_list_add_by_caller_with_nested_node_val (void)
 {
+#ifdef VERBOSE
+  TEST_BEGIN();
+#endif
+
   LIST *l;
   struct nested_val *nv1, *nv2, *nv3;
 
@@ -229,6 +247,10 @@ cleanup:
 void
 test_list_add_complex_case (void)
 {
+#ifdef VERBOSE
+  TEST_BEGIN();
+#endif
+
   LIST *l;
   int a, b, c;
 
@@ -256,6 +278,10 @@ cleanup:
 void
 test_list_move_node_to_tail (void)
 {
+#ifdef VERBOSE
+  TEST_BEGIN();
+#endif
+
   LIST *l;
   LIST_NODE *tn;
   int i, a, b, c;
@@ -272,6 +298,7 @@ test_list_move_node_to_tail (void)
 
 #ifdef VERBOSE
   list_print (l, int_printer);
+  printf("\n");
 #endif
 
   for (i = 0; i < 3; i++)
@@ -281,6 +308,7 @@ test_list_move_node_to_tail (void)
 
 #ifdef VERBOSE
       list_print (l, int_printer);
+      printf("\n");
 #endif
     }
 

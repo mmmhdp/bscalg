@@ -8,6 +8,10 @@
 void
 test_hshtbl_init_and_free (void)
 {
+#ifdef VERBOSE
+  TEST_BEGIN();
+#endif
+
   int ht_sz;
   HSH_TBL *ht;
 
@@ -18,11 +22,16 @@ test_hshtbl_init_and_free (void)
 
 cleanup:
   ht_free (ht);
+  TEST_PASSED ();
 }
 
 void
 test_hshtbl_add_basic (void)
 {
+#ifdef VERBOSE
+  TEST_BEGIN();
+#endif
+
   int ht_sz, value, v_sz;
   HSH_TBL *ht;
 
@@ -36,13 +45,13 @@ test_hshtbl_add_basic (void)
 
 #ifdef VERBOSE
   ht_print(ht);
-  printf("\n");
 #endif
 
   goto cleanup;
 
 cleanup:
   ht_free (ht);
+  TEST_PASSED ();
 }
 
 static const int key_mocks_len = 5;
@@ -53,6 +62,10 @@ static const char * key_mocks [] = {
 void
 test_hshtbl_add_complex (void)
 {
+#ifdef VERBOSE
+  TEST_BEGIN();
+#endif
+
   int i, ht_sz, value, v_sz;
   char *key;
   HSH_TBL *ht;
@@ -70,13 +83,13 @@ test_hshtbl_add_complex (void)
 
 #ifdef VERBOSE
   ht_print(ht);
-  printf("\n");
 #endif
 
   goto cleanup;
 
 cleanup:
   ht_free (ht);
+  TEST_PASSED ();
 }
 
 int
