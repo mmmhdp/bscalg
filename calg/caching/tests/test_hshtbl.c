@@ -4,10 +4,14 @@
 #include "hshtbl.h"
 #include "utils.h"
 
-#define TESTING
-
 int
 main (void)
 {
+#ifdef TESTING
+  printf ("\nRUNNING %s:\n\n", __FILE__);
+
+  printf ("\nTESTS ARE COMPLETED\n");
+#endif
+
   return 0;
 }

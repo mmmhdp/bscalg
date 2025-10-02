@@ -1,19 +1,21 @@
 #pragma once
 #include <stdint.h>
 
+#include "list.h"
+
 typedef struct hshtbl HSHTBL;
+typedef struct hsh_val HSH_VAL;
 
-uint32_t
-ht_hsf (char *key, uint32_t hstb_sz);
+typedef struct hsh_key HSH_KEY;
 
-HSHTBL *
-ht_init(uint32_t hash_table_size);
+typedef struct hsh_line HSH_LINE;
 
-void
-ht_free(HSHTBL * ht);
+typedef NODE_DATA HSH_LINE_NODE_DATA;
 
-void
-ht_print(HSHTBL * ht);
+typedef struct hsh_tbl HSH_TBL;
 
-void
-ht_add(HSHTBL *ht, char *key, uint32_t val);
+HSHTBL *ht_init (int hash_table_size);
+
+void ht_free (HSHTBL *ht);
+
+void ht_print (HSHTBL *ht);

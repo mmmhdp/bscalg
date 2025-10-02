@@ -1,5 +1,3 @@
-#define _GNU_SOURCE
-
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -9,34 +7,52 @@
 #include "hshtbl.h"
 #include "list.h"
 
-#define HSH_BASE_TB_CP 1048576 // 2**20
-#define HST_BASE_2_POW_STEPS_TO_INT_32 12
 #define HSH_P 9973
 #define HSH_A 123
 #define HSH_B 23
 
-typedef struct hshtbl
+typedef struct hsh_val
 {
-  uint32_t (*hsh_func) (char *, uint32_t);
-  LIST **mem;
-  uint32_t sz;
-} HSHTBL;
+  void *val;
+  size_t sz;
+} HSH_VAL;
 
-uint32_t
-ht_hsf (char *key, uint32_t hstb_sz)
+typedef struct hsh_key
 {
-  int i;
-  uint32_t hs;
+  char *key;
+  unsigned long key_len;
+} HSH_KEY;
+
+typedef struct hsh_line
+{
+  LIST *line;
+  HSH_KEY *last_inserted_key;
+} HSH_LINE;
+
+typedef NODE_DATA HSH_LINE_NODE_DATA;
+
+typedef struct hsh_tbl
+{
+  int capacity;
+  HSH_LINE **hlines;
+} HSH_TBL;
+
+int
+ht_hsf (HSH_TBL *ht, HSH_KEY *k)
+{
+  unsigned long i;
+  int hs;
   char c;
 
-  if (strlen (key) == 0)
+  if (k->key_len == 0)
     hs = 0;
 
-  for (i = 0; i < (int)strlen (key); i++)
+  for (i = 0; i < k->key_len; i++)
     {
-      c = key[i];
-      hs = ((HSH_A * c + HSH_B) % HSH_P) % hstb_sz;
+      c = k->key[i];
+      hs = ((HSH_A * c + HSH_B) % HSH_P) % ht->capacity;
     }
 
   return hs;
 }
+
