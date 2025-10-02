@@ -20,5 +20,8 @@ void ht_free (HSH_TBL *ht);
 
 void ht_add (HSH_TBL *ht, char *key, unsigned long key_len, void *value,
              size_t v_sz);
+void ht_delete (HSH_TBL *ht, char *key, unsigned long key_len);
 
 void ht_print (HSH_TBL *ht);
+
+HSH_VAL *ht_find (HSH_TBL *ht, char *key, unsigned long key_len);

@@ -32,6 +32,8 @@ static void hline_node_free (HSH_LINE_NODE_DATA *d);
 
 static void hline_free (HSH_LINE *hl);
 
+static HSH_LINE *hline_init (void);
+
 typedef struct hsh_val
 {
   void *val;
@@ -88,11 +90,7 @@ ht_init (int ht_sz)
   ht->hlines = calloc (ht->capacity, sizeof (HSH_LINE *));
 
   for (i = 0; i < ht->capacity; i++)
-    {
-      ht->hlines[i] = malloc (1 * sizeof (HSH_LINE));
-      ht->hlines[i]->line = list_init ();
-      ht->hlines[i]->last_inserted_key = NULL;
-    }
+    ht->hlines[i] = hline_init ();
 
   return ht;
 }
@@ -124,6 +122,17 @@ val_init (void *value, size_t v_sz)
   v->sz = v_sz;
 
   return v;
+}
+
+static HSH_LINE *
+hline_init (void)
+{
+  HSH_LINE *hl;
+  hl = calloc (1, sizeof (HSH_LINE));
+  hl->last_inserted_key = NULL;
+  hl->line = list_init ();
+
+  return hl;
 }
 
 static void
@@ -224,6 +233,28 @@ ht_add (HSH_TBL *ht, char *key, unsigned long key_len, void *value,
   val_free (v);
 }
 
+void
+ht_delete (HSH_TBL *ht, char *key, unsigned long key_len)
+{
+  HSH_VAL *v;
+  HSH_KEY *k;
+  HSH_LINE *hl;
+  int hash;
+
+  v = ht_find (ht, key, key_len);
+
+  if (v == NULL)
+    return;
+
+  k = key_init (key, key_len);
+  hash = hsf (ht, k);
+
+  hl = ht->hlines[hash];
+  hline_free (hl);
+
+  ht->hlines[hash] = hline_init ();
+}
+
 static void
 line_node_data_printer_with_int_inner_value (NODE_DATA *d, int is_top_node)
 {
@@ -242,9 +273,9 @@ line_node_data_printer_with_int_inner_value (NODE_DATA *d, int is_top_node)
   value = *((int *)tv->val);
 
   if (is_top_node)
-      printf ("(Top node: %d)->", value);
+    printf ("(Top node: %d)->", value);
   else
-      printf ("(Node: %d)->", value);
+    printf ("(Node: %d)->", value);
 }
 
 void
@@ -257,12 +288,36 @@ ht_print (HSH_TBL *ht)
     {
       hl = ht->hlines[i];
       if (hl->last_inserted_key == NULL)
-      {
-        printf ("Key: [empty] \n");
-        continue;
-      }
+        {
+          printf ("Key: [empty] \n");
+          continue;
+        }
       printf ("Key: [%s] ", hl->last_inserted_key->key);
       list_print (hl->line, line_node_data_printer_with_int_inner_value);
       printf ("\n");
     }
+}
+
+HSH_VAL *
+ht_find (HSH_TBL *ht, char *key, unsigned long key_len)
+{
+  HSH_VAL *v;
+  HSH_KEY *k;
+  HSH_LINE *hl;
+  LIST_NODE *n;
+  NODE_DATA *d;
+  int hash;
+
+  k = key_init (key, key_len);
+  hash = hsf (ht, k);
+  hl = ht->hlines[hash];
+
+  if (hl->last_inserted_key == NULL)
+    return NULL;
+
+  n = list_get_tail_node (hl->line);
+  d = list_node_get_data (n);
+  v = list_node_data_get_value (d);
+
+  return v;
 }
