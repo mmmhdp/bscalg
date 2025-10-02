@@ -10,7 +10,12 @@ LIST *list_init (void);
 
 void list_free (LIST *l);
 
+void list_free_by_caller (LIST *l, void (*free_val) (NODE_DATA *d));
+
 void list_add_node (LIST *l, void *v, int vsz);
+
+void list_add_node_by_caller (LIST *l, void *v, int vsz,
+                              void (*val_copy) (void **dst, void *v, size_t v_sz));
 
 /*
  * Returns
@@ -18,6 +23,9 @@ void list_add_node (LIST *l, void *v, int vsz);
  * 1 if node doesn't belong to list
  * */
 int list_delete_node (LIST *l, LIST_NODE *n);
+
+int list_delete_node_by_caller (LIST *l, LIST_NODE *n,
+                                void (*free_val_f) (NODE_DATA *d));
 
 void list_move_node_to_tail (LIST *l, LIST_NODE *n);
 

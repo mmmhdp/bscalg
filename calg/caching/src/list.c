@@ -7,6 +7,16 @@
 #include "list.h"
 #include "utils.h"
 
+static NODE_DATA *list_node_data_init (void *v, size_t vsz);
+static LIST_NODE *list_node_init (NODE_DATA *data, LIST_NODE *prev,
+                                  LIST_NODE *next);
+static void list_node_data_free (NODE_DATA *d);
+static void list_node_free (LIST_NODE *n);
+static void list_node_free_by_caller (LIST_NODE *n,
+                                      void (*free_val) (NODE_DATA *d));
+static void list_add_complete_node (LIST *l, LIST_NODE *n);
+static int list_nodes_link (LIST *l, LIST_NODE *nparent, LIST_NODE *nchild);
+
 typedef struct node_data
 {
   void *value;
@@ -27,21 +37,59 @@ typedef struct list
   int list_len;
 } LIST;
 
+LIST_NODE *
+list_node_get_prev (LIST_NODE *n)
+{
+  return n->prev;
+}
+
+LIST_NODE *
+list_node_get_next (LIST_NODE *n)
+{
+  return n->next;
+}
+
+NODE_DATA *
+list_node_data_get_data (LIST_NODE *n)
+{
+  return n->data;
+}
+
+void *
+list_node_data_get_value (NODE_DATA *d)
+{
+  return d->value;
+}
+
+size_t
+list_node_data_get_value_sz (NODE_DATA *d)
+{
+  return d->sz;
+}
+
+LIST_NODE *
+list_get_top_node (LIST *l)
+{
+  return l->top;
+}
+
+LIST_NODE *
+list_get_tail_node (LIST *l)
+{
+  return l->tail;
+}
+
+int
+list_get_len (LIST *l)
+{
+  return l->list_len;
+}
+
 LIST *
 list_init (void)
 {
   LIST *l = calloc (1, sizeof (LIST));
   return l;
-}
-
-static void
-list_node_data_free (NODE_DATA *d)
-{
-  if (!d)
-    return;
-
-  free (d->value);
-  free (d);
 }
 
 static NODE_DATA *
@@ -56,14 +104,17 @@ list_node_data_init (void *v, size_t vsz)
   return d;
 }
 
-static void
-list_node_free (LIST_NODE *n)
+static NODE_DATA *
+list_node_data_init_by_caller (void *v, size_t vsz,
+                               void (*val_copy) (void **dst, void *v, size_t v_sz))
 {
-  if (!n)
-    return;
+  NODE_DATA *d;
 
-  list_node_data_free (n->data);
-  free (n);
+  d = calloc (1, sizeof (NODE_DATA));
+  val_copy (&(d->value), v, vsz);
+
+  d->sz = vsz;
+  return d;
 }
 
 static LIST_NODE *
@@ -74,6 +125,46 @@ list_node_init (NODE_DATA *data, LIST_NODE *prev, LIST_NODE *next)
   n->prev = prev;
   n->data = data;
   return n;
+}
+
+static void
+list_node_data_free (NODE_DATA *d)
+{
+  if (!d)
+    return;
+
+  free (d->value);
+  free (d);
+}
+
+static void
+list_node_data_free_by_caller (NODE_DATA *d, void (*free_val) (NODE_DATA *d))
+{
+  if (!d)
+    return;
+
+  free_val (d);
+  free (d);
+}
+
+static void
+list_node_free (LIST_NODE *n)
+{
+  if (!n)
+    return;
+
+  list_node_data_free (n->data);
+  free (n);
+}
+
+static void
+list_node_free_by_caller (LIST_NODE *n, void (*free_val) (NODE_DATA *d))
+{
+  if (!n)
+    return;
+
+  list_node_data_free_by_caller (n->data, free_val);
+  free (n);
 }
 
 void
@@ -104,6 +195,94 @@ list_free (LIST *l)
 }
 
 void
+list_free_by_caller (LIST *l, void (*free_val) (NODE_DATA *d))
+{
+  LIST_NODE *t, *tn;
+
+  t = l->top;
+  if (!t)
+    {
+      free (l);
+      return;
+    }
+
+  while (t != NULL)
+    {
+      tn = t->next;
+      list_delete_node_by_caller (l, t, free_val);
+      if (!tn)
+        {
+          free (l);
+          return;
+        }
+      t = tn;
+    }
+
+  free (l);
+}
+
+int
+list_delete_node (LIST *l, LIST_NODE *n)
+{
+  int error_code;
+  LIST_NODE *tn;
+
+  tn = list_node_find (l, n);
+  if (!tn)
+    {
+      ERROR (
+          "Attempt to delete node %p that doesn't belong to provided list %p",
+          (void *)n, (void *)l);
+      return 1;
+    }
+
+  error_code = list_nodes_link (l, tn->prev, tn->next);
+  if (error_code != 0)
+    abort ();
+
+  list_node_free (tn);
+  l->list_len -= 1;
+
+  return 0;
+}
+
+int
+list_delete_node_by_caller (LIST *l, LIST_NODE *n,
+                            void (*free_val) (NODE_DATA *d))
+{
+  int error_code;
+  LIST_NODE *tn;
+
+  tn = list_node_find (l, n);
+  if (!tn)
+    {
+      ERROR (
+          "Attempt to delete node %p that doesn't belong to provided list %p",
+          (void *)n, (void *)l);
+      return 1;
+    }
+
+  error_code = list_nodes_link (l, tn->prev, tn->next);
+  if (error_code != 0)
+    abort ();
+
+  list_node_free_by_caller (tn, free_val);
+  l->list_len -= 1;
+
+  return 0;
+}
+
+static void
+list_add_complete_node (LIST *l, LIST_NODE *n)
+{
+  n->next = NULL;
+  l->tail->next = n;
+  l->tail = n;
+
+  l->list_len += 1;
+}
+
+void
 list_add_node (LIST *l, void *v, int vsz)
 {
   NODE_DATA *d;
@@ -124,14 +303,26 @@ list_add_node (LIST *l, void *v, int vsz)
   l->tail = n;
 }
 
-static void
-list_add_complete_node (LIST *l, LIST_NODE *n)
+void
+list_add_node_by_caller (LIST *l, void *v, int vsz,
+                         void (*val_copy) (void **dst, void *v, size_t v_sz))
 {
-  n->next = NULL;
-  l->tail->next = n;
-  l->tail = n;
+  NODE_DATA *d;
+  LIST_NODE *n;
+
+  d = list_node_data_init_by_caller (v, vsz, val_copy);
+  n = list_node_init (d, l->tail, NULL);
 
   l->list_len += 1;
+
+  if (l->top == NULL)
+    {
+      l->top = l->tail = n;
+      return;
+    }
+
+  l->tail->next = n;
+  l->tail = n;
 }
 
 LIST_NODE *
@@ -213,73 +404,6 @@ list_nodes_link (LIST *l, LIST_NODE *nparent, LIST_NODE *nchild)
   return 0;
 }
 
-int
-list_delete_node (LIST *l, LIST_NODE *n)
-{
-  int error_code;
-  LIST_NODE *tn;
-
-  tn = list_node_find (l, n);
-  if (!tn)
-    {
-      ERROR (
-          "Attempt to delete node %p that doesn't belong to provided list %p",
-          (void *)n, (void *)l);
-      return 1;
-    }
-
-  error_code = list_nodes_link (l, tn->prev, tn->next);
-  if (error_code != 0)
-    abort ();
-
-  list_node_free (tn);
-  l->list_len -= 1;
-
-  return 0;
-}
-
-LIST_NODE *
-list_node_get_prev (LIST_NODE *n)
-{
-  return n->prev;
-}
-
-LIST_NODE *
-list_node_get_next (LIST_NODE *n)
-{
-  return n->next;
-}
-
-NODE_DATA *
-list_node_data_get_data (LIST_NODE *n)
-{
-  return n->data;
-}
-
-void *
-list_node_data_get_value (NODE_DATA *d)
-{
-  return d->value;
-}
-
-size_t
-list_node_data_get_value_sz (NODE_DATA *d)
-{
-  return d->sz;
-}
-
-LIST_NODE *
-list_get_top_node (LIST *l)
-{
-  return l->top;
-}
-
-LIST_NODE *
-list_get_tail_node (LIST *l)
-{
-  return l->tail;
-}
-
 void
 list_move_node_to_tail (LIST *l, LIST_NODE *n)
 {
@@ -296,12 +420,6 @@ list_move_node_to_tail (LIST *l, LIST_NODE *n)
    * To balance l->list_len change in list_add_complete_node
    * */
   l->list_len -= 1;
-}
-
-int
-list_get_len (LIST *l)
-{
-  return l->list_len;
 }
 
 void **
