@@ -19,6 +19,9 @@ void list_add_node (LIST *l, void *v, int vsz);
  * */
 int list_delete_node (LIST *l, LIST_NODE *n);
 
+int list_delete_node_by_caller (LIST *l, LIST_NODE *n,
+                                void (*free_val_f) (NODE_DATA *d));
+
 void list_move_node_to_tail (LIST *l, LIST_NODE *n);
 
 LIST_NODE *list_node_find (LIST *l, LIST_NODE *n);
