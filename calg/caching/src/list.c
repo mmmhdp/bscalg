@@ -446,7 +446,7 @@ list_print (LIST *l, void (*node_printer) (NODE_DATA *d, int is_top_node))
   tn = l->top;
   if (!tn)
     {
-      printf ("{Empty list}\n");
+      printf ("{Empty list}");
       return;
     }
 
@@ -459,5 +459,4 @@ list_print (LIST *l, void (*node_printer) (NODE_DATA *d, int is_top_node))
       tn = tn->next;
     }
   node_printer (NULL, FALSE);
-  printf ("\n");
 }
