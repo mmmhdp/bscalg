@@ -61,21 +61,35 @@ typedef struct hsh_tbl
   HSH_LINE **hlines;
 } HSH_TBL;
 
-int
-hsf (HSH_TBL *ht, HSH_KEY *k)
+static int
+naive_hsf (HSH_TBL *ht, HSH_KEY *k)
 {
   unsigned long i;
   int hs;
   char c;
 
+  hs = 0;
   if (k->key_len == 0)
-    hs = 0;
+    return hs;
 
   for (i = 0; i < k->key_len; i++)
     {
       c = k->key[i];
-      hs = ((HSH_A * c + HSH_B) % HSH_P) % ht->capacity;
+      hs = (hs + ((HSH_A * c + HSH_B) % HSH_P)) % ht->capacity;
     }
+
+  return hs;
+}
+
+static int
+hsf (HSH_TBL *ht, char *key, unsigned long key_len)
+{
+  int hs;
+  HSH_KEY *k;
+
+  k = key_init (key, key_len);
+  hs = naive_hsf (ht, k);
+  key_free (k);
 
   return hs;
 }
@@ -209,9 +223,12 @@ hline_update_last_key (HSH_LINE *hl, HSH_KEY *k)
 static void
 ht_add_k_v_pair (HSH_TBL *ht, HSH_KEY *k, HSH_VAL *v)
 {
-  int hash = hsf (ht, k);
+  HSH_LINE *hl;
+  int hash;
 
-  HSH_LINE *hl = ht->hlines[hash];
+  hash = naive_hsf (ht, k);
+
+  hl = ht->hlines[hash];
   list_add_node_by_caller (hl->line, v, sizeof (HSH_VAL), val_copy);
 
   hline_update_last_key (hl, k);
@@ -247,7 +264,7 @@ ht_delete (HSH_TBL *ht, char *key, unsigned long key_len)
     return;
 
   k = key_init (key, key_len);
-  hash = hsf (ht, k);
+  hash = naive_hsf (ht, k);
 
   hl = ht->hlines[hash];
   hline_free (hl);
@@ -281,21 +298,25 @@ line_node_data_printer_with_int_inner_value (NODE_DATA *d, int is_top_node)
 }
 
 void
-ht_print (HSH_TBL *ht)
+ht_print (HSH_TBL *ht, void (*node_printer) (NODE_DATA *d, int is_top_node))
 {
   int i;
   HSH_LINE *hl;
+
+  if (node_printer == NULL)
+    node_printer = line_node_data_printer_with_int_inner_value;
 
   for (i = 0; i < ht->capacity; i++)
     {
       hl = ht->hlines[i];
       if (hl->last_inserted_key == NULL)
         {
-          printf ("Key: [empty] \n");
+          printf ("Hash index: [%d] Key: [empty] \n", i);
           continue;
         }
-      printf ("Key: [%s] ", hl->last_inserted_key->key);
-      list_print (hl->line, line_node_data_printer_with_int_inner_value);
+      printf ("Hash index: [%d] Key: [%s] ", i, hl->last_inserted_key->key);
+
+      list_print (hl->line, node_printer);
       printf ("\n");
     }
 }
@@ -311,7 +332,7 @@ ht_find (HSH_TBL *ht, char *key, unsigned long key_len)
   int hash;
 
   k = key_init (key, key_len);
-  hash = hsf (ht, k);
+  hash = naive_hsf (ht, k);
   hl = ht->hlines[hash];
 
   if (hl->last_inserted_key == NULL)
@@ -336,3 +357,6 @@ ht_get_value (HSH_VAL *v)
 
   return v->val;
 }
+
+HSH_FUNC
+ht_get_hsf (void) { return hsf; }

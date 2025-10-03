@@ -38,13 +38,13 @@ test_hshtbl_add_basic (void)
   ht_sz = 10;
   ht = ht_init (ht_sz);
 
-  value = 4;
+  value = 13;
   v_sz = sizeof (int);
 
   ht_add (ht, "Foo", strlen ("Foo"), &value, v_sz);
 
 #ifdef VERBOSE
-  ht_print (ht);
+  ht_print (ht, NULL);
 #endif
 
   goto cleanup;
@@ -55,7 +55,7 @@ cleanup:
 }
 
 static const int key_mocks_len = 5;
-static const char *key_mocks[] = { "Foo", "Boo", "Zoo", "Buzz", "Fuzz" };
+static const char *key_mocks[] = { "Foo", "Boo", "Zoo", "Guzz", "Nuzz" };
 
 void
 test_hshtbl_add_complex (void)
@@ -80,7 +80,7 @@ test_hshtbl_add_complex (void)
     }
 
 #ifdef VERBOSE
-  ht_print (ht);
+  ht_print (ht, NULL);
 #endif
 
   goto cleanup;
@@ -111,11 +111,17 @@ test_hshtbl_delete (void)
       key = (char *)key_mocks[i % key_mocks_len];
       ht_add (ht, key, strlen (key), &value, v_sz);
     }
+#ifdef VERBOSE
+  printf ("Before:\n");
+  ht_print (ht, NULL);
+#endif
 
+  printf ("\nKey %s will be deleted!\n", key);
   ht_delete (ht, key, strlen (key));
 
 #ifdef VERBOSE
-  ht_print (ht);
+  printf ("After:\n");
+  ht_print (ht, NULL);
 #endif
 
   goto cleanup;
@@ -168,7 +174,7 @@ test_hshtbl_find (void)
     printf ("Key %s is found with stored value %d!\n", key, *ptest_value);
 
 #ifdef VERBOSE
-  ht_print (ht);
+  ht_print (ht, NULL);
 #endif
 
   goto cleanup;
