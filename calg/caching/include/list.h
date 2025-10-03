@@ -48,6 +48,8 @@ LIST_NODE *list_get_top_node (LIST *l);
 
 LIST_NODE *list_get_tail_node (LIST *l);
 
+size_t list_node_get_size ();
+
 void **list_convert_to_arr (LIST *l);
 
 void list_print (LIST *l,

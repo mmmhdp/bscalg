@@ -319,6 +319,46 @@ cleanup:
   TEST_PASSED ();
 }
 
+void
+test_list_move_node_to_tail_with_one_node (void)
+{
+#ifdef VERBOSE
+  TEST_BEGIN ();
+#endif
+
+  LIST *l;
+  LIST_NODE *tn;
+  int i, a;
+
+  l = list_init ();
+
+  a = 3;
+
+  list_add_node (l, &a, sizeof (int));
+
+#ifdef VERBOSE
+  list_print (l, int_printer);
+  printf ("\n");
+#endif
+
+  for (i = 0; i < 3; i++)
+    {
+      tn = list_get_top_node (l);
+      list_move_node_to_tail (l, tn);
+
+#ifdef VERBOSE
+      list_print (l, int_printer);
+      printf ("\n");
+#endif
+    }
+
+  goto cleanup;
+
+cleanup:
+  list_free (l);
+  TEST_PASSED ();
+}
+
 int
 main (void)
 {
@@ -332,6 +372,7 @@ main (void)
   test_list_add_by_caller_with_nested_node_val ();
   test_list_add_complex_case ();
   test_list_move_node_to_tail ();
+  test_list_move_node_to_tail_with_one_node ();
 
   printf ("\nTESTS ARE COMPLETED\n");
 #endif

@@ -85,6 +85,12 @@ list_get_len (LIST *l)
   return l->list_len;
 }
 
+size_t
+list_node_get_size ()
+{
+  return sizeof (LIST_NODE);
+}
+
 LIST *
 list_init (void)
 {
@@ -408,8 +414,21 @@ list_nodes_link (LIST *l, LIST_NODE *nparent, LIST_NODE *nchild)
 void
 list_move_node_to_tail (LIST *l, LIST_NODE *n)
 {
-  LIST_NODE *nprev, *nnext;
-  if (!n)
+  LIST_NODE *nprev, *nnext, *ntmp;
+
+  if (n == NULL)
+    return;
+
+  ntmp = list_node_find (l, n);
+  if (ntmp == NULL)
+    {
+      ERROR (
+          "Attempt to move node %p, that doesn't belong to provided list %p",
+          (void *)n, (void *)l);
+      return;
+    }
+
+  if (l->tail == n)
     return;
 
   nprev = n->prev;
