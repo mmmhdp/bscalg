@@ -1,5 +1,6 @@
 #pragma once
 
+#include "hshtbl.h"
 #include "list.h"
 #include <stddef.h>
 
@@ -9,8 +10,10 @@ CACHE *ch_init (unsigned long cache_capacity);
 
 void ch_free (CACHE *c);
 
-LIST_NODE *ch_get (CACHE *c, void *key, unsigned long key_len);
+HSH_VAL *ch_get (CACHE *c, void *key, unsigned long key_len);
 
 void ch_put (CACHE *c, void *value, size_t v_sz);
 
 void ch_print (CACHE *c);
+
+char *ch_assemble_valid_key (void *value, size_t v_sz);

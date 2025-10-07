@@ -53,6 +53,34 @@ cleanup:
   ch_free (c);
   TEST_PASSED ();
 }
+void
+test_cache_put_same_value (void)
+{
+#ifdef VERBOSE
+  TEST_BEGIN ();
+#endif
+
+  CACHE *c = ch_init (5);
+
+  int i, value;
+
+  value = 13;
+  for (i = 0; i < 10; i++)
+    {
+      size_t v_sz = sizeof (int);
+      ch_put (c, &value, v_sz);
+    }
+
+#ifdef VERBOSE
+  ch_print (c);
+#endif
+
+  goto cleanup;
+
+cleanup:
+  ch_free (c);
+  TEST_PASSED ();
+}
 
 void
 test_cache_put_complex (void)
@@ -64,12 +92,25 @@ test_cache_put_complex (void)
   CACHE *c = ch_init (5);
 
   int value;
+  size_t v_sz;
 
-  for (value = 0; value < 10; value++)
+  value = 0;
+  for (; value < 40; value++)
     {
       size_t v_sz = sizeof (int);
       ch_put (c, &value, v_sz);
     }
+
+  value = 5;
+  for (; value >= 0; value--)
+    {
+      size_t v_sz = sizeof (int);
+      ch_put (c, &value, v_sz);
+    }
+
+  value = 52;
+  v_sz = sizeof (int);
+  ch_put (c, &value, v_sz);
 
 #ifdef VERBOSE
   ch_print (c);
@@ -90,6 +131,7 @@ main (void)
 
   test_cache_init_and_free ();
   test_cache_put_basic ();
+  test_cache_put_same_value ();
   test_cache_put_complex ();
 
   printf ("\nTESTS ARE COMPLETED\n");
