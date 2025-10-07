@@ -359,6 +359,176 @@ cleanup:
   TEST_PASSED ();
 }
 
+void
+test_list_move_tail_node_to_tail (void)
+{
+#ifdef VERBOSE
+  TEST_BEGIN ();
+#endif
+
+  LIST *l;
+  LIST_NODE *tn;
+  int a, b, c;
+
+  l = list_init ();
+
+  a = 3;
+  b = 4;
+  c = 5;
+
+  list_add_node (l, &a, sizeof (int));
+  list_add_node (l, &b, sizeof (int));
+  list_add_node (l, &c, sizeof (int));
+
+#ifdef VERBOSE
+  list_print (l, int_printer);
+  printf ("\n");
+#endif
+
+  tn = list_get_tail_node (l);
+  list_move_node_to_tail (l, tn);
+
+#ifdef VERBOSE
+  list_print (l, int_printer);
+  printf ("\n");
+#endif
+
+  goto cleanup;
+
+cleanup:
+  list_free (l);
+  TEST_PASSED ();
+}
+
+void
+test_delete_top_node (void)
+{
+#ifdef VERBOSE
+  TEST_BEGIN ();
+#endif
+
+  LIST *l;
+  LIST_NODE *ln;
+  int a, b, c, tmp;
+
+  l = list_init ();
+
+  a = 3;
+  b = 4;
+  c = 5;
+
+  list_add_node (l, &a, sizeof (int));
+  list_add_node (l, &b, sizeof (int));
+  list_add_node (l, &c, sizeof (int));
+
+#ifdef VERBOSE
+  printf ("Before:\n");
+  list_print (l, int_printer);
+#endif
+
+#ifdef VERBOSE
+  ln = list_get_top_node (l);
+  tmp = *((int *)list_node_data_get_value (list_node_get_data (ln)));
+
+  list_delete_node (l, ln);
+
+  printf ("\nAfter deletion of top node with val %d:\n", tmp);
+  list_print (l, int_printer);
+#endif
+
+  goto cleanup;
+
+cleanup:
+  list_free (l);
+  TEST_PASSED ();
+}
+
+void
+test_delete_tail_node (void)
+{
+#ifdef VERBOSE
+  TEST_BEGIN ();
+#endif
+
+  LIST *l;
+  LIST_NODE *ln;
+  int a, b, c, tmp;
+
+  l = list_init ();
+
+  a = 3;
+  b = 4;
+  c = 5;
+
+  list_add_node (l, &a, sizeof (int));
+  list_add_node (l, &b, sizeof (int));
+  list_add_node (l, &c, sizeof (int));
+
+#ifdef VERBOSE
+  printf ("Before:\n");
+  list_print (l, int_printer);
+#endif
+
+#ifdef VERBOSE
+  ln = list_get_tail_node (l);
+  tmp = *((int *)list_node_data_get_value (list_node_get_data (ln)));
+
+  list_delete_node (l, ln);
+
+  printf ("\nAfter deletion of tail node with val %d:\n", tmp);
+  list_print (l, int_printer);
+#endif
+
+  goto cleanup;
+
+cleanup:
+  list_free (l);
+  TEST_PASSED ();
+}
+
+void
+test_delete_some_node (void)
+{
+#ifdef VERBOSE
+  TEST_BEGIN ();
+#endif
+
+  LIST *l;
+  LIST_NODE *ln;
+  int tmp;
+
+  l = list_init ();
+
+  tmp = 0;
+  for (; tmp < 10; tmp++)
+    {
+      list_add_node (l, &tmp, sizeof (int));
+    }
+
+#ifdef VERBOSE
+  printf ("Before:\n");
+  list_print (l, int_printer);
+#endif
+
+#ifdef VERBOSE
+  ln = list_get_top_node (l);
+  ln = list_node_get_next (ln);
+  ln = list_node_get_next (ln);
+  tmp = *((int *)list_node_data_get_value (list_node_get_data (ln)));
+
+  list_delete_node (l, ln);
+
+  printf ("\nAfter deletion of tail node with val %d:\n", tmp);
+  list_print (l, int_printer);
+#endif
+
+  goto cleanup;
+
+cleanup:
+  list_free (l);
+  TEST_PASSED ();
+}
+
 int
 main (void)
 {
@@ -367,12 +537,20 @@ main (void)
 
   test_list_init_and_free ();
   test_list_init_and_free_by_caller ();
+
   test_list_add_basic ();
+
   test_list_add_by_caller_basic ();
   test_list_add_by_caller_with_nested_node_val ();
   test_list_add_complex_case ();
+
+  test_delete_top_node ();
+  test_delete_tail_node ();
+  test_delete_some_node ();
+
   test_list_move_node_to_tail ();
   test_list_move_node_to_tail_with_one_node ();
+  test_list_move_tail_node_to_tail ();
 
   printf ("\nTESTS ARE COMPLETED\n");
 #endif

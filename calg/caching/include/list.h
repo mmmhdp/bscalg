@@ -12,11 +12,10 @@ void list_free (LIST *l);
 
 void list_free_by_caller (LIST *l, void (*free_val) (NODE_DATA *d));
 
-void list_add_node (LIST *l, void *v, int vsz);
-
-void list_add_node_by_caller (LIST *l, void *v, int vsz,
-                              void (*val_copy) (void **dst, void *v,
-                                                size_t v_sz));
+LIST_NODE *list_add_node (LIST *l, void *v, int vsz);
+LIST_NODE *list_add_node_by_caller (LIST *l, void *v, int vsz,
+                                    void (*val_copy) (void **dst, void *v,
+                                                      size_t v_sz));
 
 /*
  * Returns
@@ -44,13 +43,17 @@ void *list_node_data_get_value (NODE_DATA *d);
 
 size_t list_node_data_get_value_sz (NODE_DATA *d);
 
+void *list_node_data_get_value (NODE_DATA *d);
+
 LIST_NODE *list_get_top_node (LIST *l);
 
 LIST_NODE *list_get_tail_node (LIST *l);
 
-size_t list_node_get_size ();
+size_t list_node_get_size (void);
 
 void **list_convert_to_arr (LIST *l);
 
 void list_print (LIST *l,
                  void (*node_printer) (NODE_DATA *d, int is_top_node));
+
+void list_print_p (LIST *l);

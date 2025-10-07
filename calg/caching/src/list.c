@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdarg.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -86,7 +87,7 @@ list_get_len (LIST *l)
 }
 
 size_t
-list_node_get_size ()
+list_node_get_size (void)
 {
   return sizeof (LIST_NODE);
 }
@@ -103,7 +104,7 @@ list_node_data_init (void *v, size_t vsz)
 {
   NODE_DATA *d;
   d = calloc (1, sizeof (NODE_DATA));
-  d->value = malloc (sizeof (vsz));
+  d->value = malloc (vsz);
 
   memcpy (d->value, v, vsz);
   d->sz = vsz;
@@ -231,7 +232,6 @@ list_free_by_caller (LIST *l, void (*free_val) (NODE_DATA *d))
 int
 list_delete_node (LIST *l, LIST_NODE *n)
 {
-  int error_code;
   LIST_NODE *tn;
 
   tn = list_node_find (l, n);
@@ -243,10 +243,7 @@ list_delete_node (LIST *l, LIST_NODE *n)
       return 1;
     }
 
-  error_code = list_nodes_link (l, tn->prev, tn->next);
-  if (error_code != 0)
-    abort ();
-
+  list_nodes_link (l, tn->prev, tn->next);
   list_node_free (tn);
   l->list_len -= 1;
 
@@ -282,14 +279,26 @@ list_delete_node_by_caller (LIST *l, LIST_NODE *n,
 static void
 list_add_complete_node (LIST *l, LIST_NODE *n)
 {
+  if (!l || !n)
+    return;
+
   n->next = NULL;
-  l->tail->next = n;
-  l->tail = n;
+  if (!l->tail)
+    {
+      n->prev = NULL;
+      l->top = l->tail = n;
+    }
+  else
+    {
+      l->tail->next = n;
+      n->prev = l->tail;
+      l->tail = n;
+    }
 
   l->list_len += 1;
 }
 
-void
+LIST_NODE *
 list_add_node (LIST *l, void *v, int vsz)
 {
   NODE_DATA *d;
@@ -303,14 +312,16 @@ list_add_node (LIST *l, void *v, int vsz)
   if (l->top == NULL)
     {
       l->top = l->tail = n;
-      return;
+      return n;
     }
 
   l->tail->next = n;
   l->tail = n;
+
+  return n;
 }
 
-void
+LIST_NODE *
 list_add_node_by_caller (LIST *l, void *v, int vsz,
                          void (*val_copy) (void **dst, void *v, size_t v_sz))
 {
@@ -325,11 +336,13 @@ list_add_node_by_caller (LIST *l, void *v, int vsz,
   if (l->top == NULL)
     {
       l->top = l->tail = n;
-      return;
+      return n;
     }
 
   l->tail->next = n;
   l->tail = n;
+
+  return n;
 }
 
 LIST_NODE *
@@ -355,58 +368,27 @@ list_node_find (LIST *l, LIST_NODE *n)
  * 1 if one of nodes doesn't belong to list;
  * */
 static int
-list_nodes_link (LIST *l, LIST_NODE *nparent, LIST_NODE *nchild)
+list_nodes_link (LIST *l, LIST_NODE *lhs, LIST_NODE *rhs)
 {
-  LIST_NODE *tnp, *tnc;
+  if (!lhs && !rhs)
+    return 0;
 
-  /*
-   *  The only node in list without a parent is the top node
-   *  so we maintain a state of the whole list updating
-   *  the top node value for list
-   */
-  if (!nparent)
+  if (!lhs)
     {
-      tnc = list_node_find (l, nchild);
-      if (tnc)
-        {
-          tnc->prev = NULL;
-          l->top = tnc;
-        }
+      l->top = rhs;
+      rhs->prev = NULL;
       return 0;
     }
 
-  /*
-   *  The only node in list without a child is the tail node
-   *  so we maintain a state of the whole list updating
-   *  the tail node value for list
-   */
-  if (!nchild)
+  if (!rhs)
     {
-      tnp = list_node_find (l, nparent);
-      if (tnp)
-        {
-          tnp->next = NULL;
-          l->tail = tnp;
-        }
+      l->tail = lhs;
+      lhs->next = NULL;
       return 0;
     }
 
-  tnp = list_node_find (l, nparent);
-  tnc = list_node_find (l, nchild);
-
-  if (!tnp || !tnc)
-    {
-      ERROR ("Attempt to link nodes %p and %p, but they don't belong to "
-             "provided list %p",
-             (void *)nparent, (void *)nchild, (void *)l);
-      return 1;
-    }
-
-  assert (nparent != NULL);
-  assert (nchild != NULL);
-
-  nparent->next = nchild;
-  nchild->prev = nparent;
+  lhs->next = rhs;
+  rhs->prev = lhs;
 
   return 0;
 }
@@ -414,16 +396,16 @@ list_nodes_link (LIST *l, LIST_NODE *nparent, LIST_NODE *nchild)
 void
 list_move_node_to_tail (LIST *l, LIST_NODE *n)
 {
-  LIST_NODE *nprev, *nnext, *ntmp;
+  LIST_NODE *nprev, *nnext;
+  int linked_with_problems;
 
-  if (n == NULL)
+  if (!n || !l)
     return;
 
-  ntmp = list_node_find (l, n);
-  if (ntmp == NULL)
+  if (!list_node_find (l, n))
     {
       ERROR (
-          "Attempt to move node %p, that doesn't belong to provided list %p",
+          "Attempt to move node %p, that doesn't belong to provided list %p\n",
           (void *)n, (void *)l);
       return;
     }
@@ -434,7 +416,14 @@ list_move_node_to_tail (LIST *l, LIST_NODE *n)
   nprev = n->prev;
   nnext = n->next;
 
-  list_nodes_link (l, nprev, nnext);
+  linked_with_problems = list_nodes_link (l, nprev, nnext);
+  if (linked_with_problems)
+    {
+      ERROR ("Attempt to link nodes %p and %p, "
+             "and list %p enden with errcode %d",
+             (void *)nprev, (void *)nnext, (void *)l, linked_with_problems);
+    }
+
   list_add_complete_node (l, n);
   /*
    * To balance l->list_len change in list_add_complete_node
@@ -478,4 +467,28 @@ list_print (LIST *l, void (*node_printer) (NODE_DATA *d, int is_top_node))
       tn = tn->next;
     }
   node_printer (NULL, FALSE);
+}
+
+void
+list_print_p (LIST *l)
+{
+  LIST_NODE *tn;
+
+  tn = l->top;
+  if (!tn)
+    {
+      printf ("{Empty list}");
+      return;
+    }
+
+  printf ("(Top node p: [%p])->", (void *)tn);
+
+  tn = tn->next;
+  while (tn)
+    {
+      printf ("(Node p: [%p])->", (void *)tn);
+      tn = tn->next;
+    }
+
+  printf ("(NULL node p: [%p])", (void *)tn);
 }
