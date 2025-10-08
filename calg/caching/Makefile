@@ -34,6 +34,7 @@ HSHTBL_LIB  = $(LIBS_DIR)/libhshtbl.a
 
 TESTS_BIN_DIR = $(BUILD_DIR)/tests
 TESTS_DIR = tests
+TESTS_DATA_DIR = $(TESTS_DIR)/data
 TESTS_SRCS = $(wildcard $(TESTS_DIR)/*.c)
 TESTS_FILES = $(notdir $(TESTS_SRCS))
 TESTS_OBJ = $(TESTS_FILES:%.c=$(OBJ_DIR)/%.test.o)
@@ -42,7 +43,7 @@ TESTS_PPFLAGS = -DTESTING -DVERBOSE
 
 TARGET = $(BUILD_DIR)/main
 
-all: $(TARGET) format
+all: $(TARGET) format test-main
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
 	bear -- $(CC) $(CFLAGS) -c $< -o $@ 
@@ -71,8 +72,8 @@ $(TESTS_BIN_DIR)/%: $(OBJ_DIR)/%.test.o  $(LIST_LIB) $(CACHE_LIB) $(HSHTBL_LIB) 
 tests: $(TESTS_BIN) format
 	$(SCRIPTS_DIR)/run_tests.sh -b $(TESTS_BIN_DIR) -a
 
-run: $(TARGET)
-	./build/main < ./tests/data/001.dat
+test-main: $(TARGET)
+	$(SCRIPTS_DIR)/run_main_test.sh -s $(TESTS_DATA_DIR) 
 
 format:
 	$(SCRIPTS_DIR)/format.sh -s $(SRC_DIR)
