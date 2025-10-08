@@ -17,3 +17,11 @@ void ch_put (CACHE *c, void *value, size_t v_sz);
 void ch_print (CACHE *c);
 
 char *ch_assemble_valid_key (void *value, size_t v_sz);
+
+int ch_get_hits (CACHE *c);
+
+int ch_get_misses (CACHE *c);
+
+int ch_get_tries (CACHE *c);
+
+void ch_reset_stats (CACHE *c);
