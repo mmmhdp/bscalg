@@ -7,6 +7,8 @@
 #include "hshtbl.h"
 #include "list.h"
 
+#define _GNU_SOURCE
+
 #define HSH_P 9973
 #define HSH_A 123
 #define HSH_B 23
@@ -58,15 +60,75 @@ typedef NODE_DATA HSH_LINE_NODE_DATA;
 typedef struct hsh_tbl
 {
   int capacity;
+  uint32_t (*hsf) (const char *key, int key_len);
   HSH_LINE **hlines;
 } HSH_TBL;
+
+#if !defined(get16bits)
+#define get16bits(d)                                                          \
+  ((((uint32_t)(((const uint8_t *)(d))[1])) << 8)                             \
+   + (uint32_t)(((const uint8_t *)(d))[0]))
+#endif
+
+uint32_t
+fash_hsf (const char *data, int len)
+{
+  uint32_t hash = len, tmp;
+  int rem;
+
+  if (len <= 0 || data == NULL)
+    return 0;
+
+  rem = len & 3;
+  len >>= 2;
+
+  /* Main loop */
+  for (; len > 0; len--)
+    {
+      hash += get16bits (data);
+      tmp = (get16bits (data + 2) << 11) ^ hash;
+      hash = (hash << 16) ^ tmp;
+      data += 2 * sizeof (uint16_t);
+      hash += hash >> 11;
+    }
+
+  /* Handle end cases */
+  switch (rem)
+    {
+    case 3:
+      hash += get16bits (data);
+      hash ^= hash << 16;
+      hash ^= ((signed char)data[sizeof (uint16_t)]) << 18;
+      hash += hash >> 11;
+      break;
+    case 2:
+      hash += get16bits (data);
+      hash ^= hash << 11;
+      hash += hash >> 17;
+      break;
+    case 1:
+      hash += (signed char)*data;
+      hash ^= hash << 10;
+      hash += hash >> 1;
+    }
+
+  /* Force "avalanching" of final 127 bits */
+  hash ^= hash << 3;
+  hash += hash >> 5;
+  hash ^= hash << 4;
+  hash += hash >> 17;
+  hash ^= hash << 25;
+  hash += hash >> 6;
+
+  return hash;
+}
 
 static int
 naive_hsf (HSH_TBL *ht, HSH_KEY *k)
 {
   unsigned long i;
   int hs;
-  char c;
+  unsigned char c;
 
   hs = 0;
   if (k->key_len == 0)
@@ -88,7 +150,7 @@ hsf (HSH_TBL *ht, char *key, unsigned long key_len)
   HSH_KEY *k;
 
   k = key_init (key, key_len);
-  hs = naive_hsf (ht, k);
+  hs = ht->hsf (k->key, k->key_len);
   key_free (k);
 
   return hs;
@@ -100,6 +162,7 @@ ht_init (int ht_sz)
   int i;
   HSH_TBL *ht = calloc (1, sizeof (HSH_TBL));
 
+  ht->hsf = fash_hsf;
   ht->capacity = ht_sz;
   ht->hlines = calloc (ht->capacity, sizeof (HSH_LINE *));
 
@@ -333,6 +396,9 @@ ht_find (HSH_TBL *ht, char *key, unsigned long key_len)
 
   k = key_init (key, key_len);
   hash = naive_hsf (ht, k);
+  if (hash < 0 || hash >= ht->capacity)
+    printf ("\nFUCKED HASH %d but capacity is %d\n", hash, ht->capacity);
+
   hl = ht->hlines[hash];
 
   if (hl->last_inserted_key == NULL)
