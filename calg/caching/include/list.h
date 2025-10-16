@@ -5,6 +5,12 @@
 typedef struct list LIST;
 typedef struct node LIST_NODE;
 typedef struct node_data NODE_DATA;
+typedef struct list_arr
+{
+  void *arr;
+  size_t *el_szs;
+  size_t arr_sz;
+} LIST_ARR;
 
 LIST *list_init (void);
 
@@ -57,3 +63,10 @@ void list_print (LIST *l,
                  void (*node_printer) (NODE_DATA *d, int is_top_node));
 
 void list_print_p (LIST *l);
+
+LIST_ARR *list_arr_init (LIST *l);
+
+void list_arr_free (LIST_ARR *la);
+
+int list_arr_is_equal (LIST_ARR *l, LIST_ARR *r,
+                       int (*is_equal) (void *lhs, void *rhs));
