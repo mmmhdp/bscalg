@@ -466,6 +466,7 @@ list_print (LIST *l, void (*node_printer) (NODE_DATA *d, int is_top_node))
       node_printer (tn->data, FALSE);
       tn = tn->next;
     }
+
   node_printer (NULL, FALSE);
 }
 
@@ -491,4 +492,90 @@ list_print_p (LIST *l)
     }
 
   printf ("(NULL node p: [%p])", (void *)tn);
+}
+
+LIST_ARR *
+list_arr_init (LIST *l)
+{
+  LIST_ARR *la;
+  LIST_NODE *ln;
+
+  size_t la_sz;
+  size_t *la_sizes, *tmp;
+  void *arr;
+  int idx, copy_offset;
+
+  if (!l || !l->top)
+    return NULL;
+
+  la = calloc (1, sizeof (LIST_ARR));
+
+  idx = 0;
+  la_sz = 0;
+  copy_offset = 0;
+  arr = NULL;
+  la_sizes = calloc (l->list_len, sizeof (size_t));
+  ln = l->top;
+
+  while (ln)
+    {
+      la_sizes[idx] = ln->data->sz;
+      copy_offset = la_sz;
+      la_sz += ln->data->sz;
+
+      tmp = realloc (arr, la_sz);
+      if (tmp)
+        arr = tmp;
+
+      memcpy ((char *)arr + copy_offset, ln->data->value, ln->data->sz);
+
+      ln = ln->next;
+      idx++;
+    }
+
+  la->el_szs = la_sizes;
+  la->arr_sz = l->list_len;
+  la->arr = arr;
+
+  return la;
+}
+
+void
+list_arr_free (LIST_ARR *la)
+{
+  if (!la)
+    return;
+  free (la->arr);
+  free (la->el_szs);
+  free (la);
+}
+
+int
+list_arr_is_equal (LIST_ARR *l, LIST_ARR *r,
+                   int (*is_equal) (void *lhs, void *rhs))
+{
+  int i, loffset, roffset;
+  char *pla, *pra;
+
+  if (l->arr_sz != r->arr_sz)
+    return FALSE;
+  for (i = 0; i < (int)l->arr_sz; i++)
+    if (l->el_szs[i] != r->el_szs[i])
+      return FALSE;
+
+  pla = (char *)l->arr;
+  pra = (char *)r->arr;
+
+  loffset = 0;
+  roffset = 0;
+  for (i = 0; i < (int)l->arr_sz; i++)
+    {
+      if (!is_equal (pla + loffset, pra + roffset))
+        return FALSE;
+
+      loffset += l->el_szs[i];
+      roffset += r->el_szs[i];
+    }
+
+  return TRUE;
 }
