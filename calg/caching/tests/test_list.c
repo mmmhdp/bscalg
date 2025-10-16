@@ -5,23 +5,25 @@
 #include "list.h"
 #include "utils.h"
 
-void
+static void
+reset_tests_cnt (void)
+{
+  TESTS_CNT = 0;
+  SUCC_TESTS_CNT = 0;
+}
+
+int
 test_list_init_and_free (void)
 {
-#ifdef VERBOSE
-  TEST_BEGIN ();
-#endif
+  TEST_BEGIN_EXT ();
 
   LIST *l;
 
   l = list_init ();
-
-  TEST_PASSED ();
-
-  goto cleanup;
-
-cleanup:
   list_free (l);
+
+  TEST_PASSED_EXT ();
+  return TRUE;
 }
 
 void
@@ -31,26 +33,21 @@ free_val (NODE_DATA *d)
   free (v);
 }
 
-void
+int
 test_list_init_and_free_by_caller (void)
 {
-#ifdef VERBOSE
-  TEST_BEGIN ();
-#endif
+  TEST_BEGIN_EXT ();
 
   LIST *l;
 
   l = list_init ();
 
-  TEST_PASSED ();
-
-  goto cleanup;
-
-cleanup:
   list_free_by_caller (l, free_val);
+
+  TEST_PASSED_EXT ();
+  return TRUE;
 }
 
-#ifdef VERBOSE
 void
 int_printer (NODE_DATA *d, int is_top_node)
 {
@@ -71,14 +68,11 @@ int_printer (NODE_DATA *d, int is_top_node)
   else
     printf ("(node val : %d)-> ", *itv);
 }
-#endif
 
-void
+int
 test_list_add_basic (void)
 {
-#ifdef VERBOSE
-  TEST_BEGIN ();
-#endif
+  TEST_BEGIN_EXT ();
 
   LIST *l;
   int a;
@@ -93,11 +87,10 @@ test_list_add_basic (void)
   list_print (l, int_printer);
 #endif
 
-  goto cleanup;
-
-cleanup:
   list_free (l);
-  TEST_PASSED ();
+
+  TEST_PASSED_EXT ();
+  return TRUE;
 }
 
 void
@@ -107,12 +100,10 @@ val_copy (void **dst, void *v, size_t v_sz)
   memcpy (*dst, v, v_sz);
 }
 
-void
+int
 test_list_add_by_caller_basic (void)
 {
-#ifdef VERBOSE
-  TEST_BEGIN ();
-#endif
+  TEST_BEGIN_EXT ();
 
   LIST *l;
   int a;
@@ -127,11 +118,9 @@ test_list_add_by_caller_basic (void)
   list_print (l, int_printer);
 #endif
 
-  goto cleanup;
-
-cleanup:
   list_free_by_caller (l, free_val);
-  TEST_PASSED ();
+  TEST_PASSED_EXT ();
+  return TRUE;
 }
 
 struct nested_val
@@ -163,7 +152,9 @@ base_free_nested_val (struct nested_val *nv)
 void
 free_nested_val (NODE_DATA *d)
 {
-  struct nested_val *v = (struct nested_val *)list_node_data_get_value (d);
+  struct nested_val *v;
+
+  v = (struct nested_val *)list_node_data_get_value (d);
 
   free (v->mem);
   free (v);
@@ -184,7 +175,6 @@ nested_val_copy (void **dst, void *v, size_t v_sz)
   *dst = buff;
 }
 
-#ifdef VERBOSE
 void
 nested_val_printer (NODE_DATA *d, int is_top_node)
 {
@@ -205,96 +195,72 @@ nested_val_printer (NODE_DATA *d, int is_top_node)
   else
     printf ("(node val : %d)-> ", *itv);
 }
-#endif
 
-void
+int
 test_list_add_by_caller_with_nested_node_val (void)
 {
-#ifdef VERBOSE
-  TEST_BEGIN ();
-#endif
+  TEST_BEGIN_EXT ();
 
   LIST *l;
-  struct nested_val *nv1, *nv2, *nv3;
+  int i;
+  struct nested_val *tmp;
 
   l = list_init ();
 
-  nv1 = create_nested_val (3);
-  nv2 = create_nested_val (4);
-  nv3 = create_nested_val (5);
-
-  list_add_node_by_caller (l, nv1, sizeof (struct nested_val),
-                           nested_val_copy);
-  list_add_node_by_caller (l, nv2, sizeof (struct nested_val),
-                           nested_val_copy);
-  list_add_node_by_caller (l, nv3, sizeof (struct nested_val),
-                           nested_val_copy);
+  for (i = 3; i < 6; i++)
+    {
+      tmp = create_nested_val (i);
+      list_add_node_by_caller (l, tmp, sizeof (struct nested_val),
+                               nested_val_copy);
+      base_free_nested_val (tmp);
+    }
 
 #ifdef VERBOSE
   list_print (l, nested_val_printer);
 #endif
 
-  goto cleanup;
-
-cleanup:
   list_free_by_caller (l, free_nested_val);
-  base_free_nested_val (nv1);
-  base_free_nested_val (nv2);
-  base_free_nested_val (nv3);
-  TEST_PASSED ();
+
+  TEST_PASSED_EXT ();
+  return TRUE;
 }
 
-void
+int
 test_list_add_complex_case (void)
 {
-#ifdef VERBOSE
-  TEST_BEGIN ();
-#endif
+  TEST_BEGIN_EXT ();
 
   LIST *l;
-  int a, b, c;
+  int tmp;
 
   l = list_init ();
 
-  a = 3;
-  b = 4;
-  c = 5;
-
-  list_add_node (l, &a, sizeof (int));
-  list_add_node (l, &b, sizeof (int));
-  list_add_node (l, &c, sizeof (int));
+  for (tmp = 3; tmp < 6; tmp++)
+    list_add_node (l, &tmp, sizeof (int));
 
 #ifdef VERBOSE
   list_print (l, int_printer);
 #endif
 
-  goto cleanup;
-
-cleanup:
   list_free (l);
-  TEST_PASSED ();
+
+  TEST_PASSED_EXT ();
+  return TRUE;
 }
 
-void
+int
 test_list_move_node_to_tail (void)
 {
-#ifdef VERBOSE
-  TEST_BEGIN ();
-#endif
+  TEST_BEGIN_EXT ();
 
   LIST *l;
   LIST_NODE *tn;
-  int i, a, b, c;
+  int i, tmp;
 
   l = list_init ();
 
-  a = 3;
-  b = 4;
-  c = 5;
-
-  list_add_node (l, &a, sizeof (int));
-  list_add_node (l, &b, sizeof (int));
-  list_add_node (l, &c, sizeof (int));
+  for (tmp = 3; tmp < 6; tmp++)
+    list_add_node (l, &tmp, sizeof (int));
 
 #ifdef VERBOSE
   list_print (l, int_printer);
@@ -312,19 +278,16 @@ test_list_move_node_to_tail (void)
 #endif
     }
 
-  goto cleanup;
-
-cleanup:
   list_free (l);
-  TEST_PASSED ();
+
+  TEST_PASSED_EXT ();
+  return TRUE;
 }
 
-void
+int
 test_list_move_node_to_tail_with_one_node (void)
 {
-#ifdef VERBOSE
-  TEST_BEGIN ();
-#endif
+  TEST_BEGIN_EXT ();
 
   LIST *l;
   LIST_NODE *tn;
@@ -352,33 +315,25 @@ test_list_move_node_to_tail_with_one_node (void)
 #endif
     }
 
-  goto cleanup;
-
-cleanup:
   list_free (l);
-  TEST_PASSED ();
+
+  TEST_PASSED_EXT ();
+  return TRUE;
 }
 
-void
+int
 test_list_move_tail_node_to_tail (void)
 {
-#ifdef VERBOSE
-  TEST_BEGIN ();
-#endif
+  TEST_BEGIN_EXT ();
 
   LIST *l;
   LIST_NODE *tn;
-  int a, b, c;
+  int tmp;
 
   l = list_init ();
 
-  a = 3;
-  b = 4;
-  c = 5;
-
-  list_add_node (l, &a, sizeof (int));
-  list_add_node (l, &b, sizeof (int));
-  list_add_node (l, &c, sizeof (int));
+  for (tmp = 3; tmp < 6; tmp++)
+    list_add_node (l, &tmp, sizeof (int));
 
 #ifdef VERBOSE
   list_print (l, int_printer);
@@ -393,40 +348,30 @@ test_list_move_tail_node_to_tail (void)
   printf ("\n");
 #endif
 
-  goto cleanup;
-
-cleanup:
   list_free (l);
-  TEST_PASSED ();
+
+  TEST_PASSED_EXT ();
+  return TRUE;
 }
 
-void
+int
 test_delete_top_node (void)
 {
-#ifdef VERBOSE
-  TEST_BEGIN ();
-#endif
+  TEST_BEGIN_EXT ();
 
   LIST *l;
-  LIST_NODE *ln;
-  int a, b, c, tmp;
+  int tmp;
 
   l = list_init ();
 
-  a = 3;
-  b = 4;
-  c = 5;
-
-  list_add_node (l, &a, sizeof (int));
-  list_add_node (l, &b, sizeof (int));
-  list_add_node (l, &c, sizeof (int));
+  for (tmp = 3; tmp < 6; tmp++)
+    list_add_node (l, &tmp, sizeof (int));
 
 #ifdef VERBOSE
+  LIST_NODE *ln;
+
   printf ("Before:\n");
   list_print (l, int_printer);
-#endif
-
-#ifdef VERBOSE
   ln = list_get_top_node (l);
   tmp = *((int *)list_node_data_get_value (list_node_get_data (ln)));
 
@@ -436,40 +381,31 @@ test_delete_top_node (void)
   list_print (l, int_printer);
 #endif
 
-  goto cleanup;
-
-cleanup:
   list_free (l);
-  TEST_PASSED ();
+
+  TEST_PASSED_EXT ();
+  return TRUE;
 }
 
-void
+int
 test_delete_tail_node (void)
 {
-#ifdef VERBOSE
-  TEST_BEGIN ();
-#endif
+  TEST_BEGIN_EXT ();
 
   LIST *l;
-  LIST_NODE *ln;
-  int a, b, c, tmp;
+  int tmp;
 
   l = list_init ();
 
-  a = 3;
-  b = 4;
-  c = 5;
-
-  list_add_node (l, &a, sizeof (int));
-  list_add_node (l, &b, sizeof (int));
-  list_add_node (l, &c, sizeof (int));
+  for (tmp = 3; tmp < 6; tmp++)
+    list_add_node (l, &tmp, sizeof (int));
 
 #ifdef VERBOSE
   printf ("Before:\n");
   list_print (l, int_printer);
-#endif
 
-#ifdef VERBOSE
+  LIST_NODE *ln;
+
   ln = list_get_tail_node (l);
   tmp = *((int *)list_node_data_get_value (list_node_get_data (ln)));
 
@@ -479,41 +415,36 @@ test_delete_tail_node (void)
   list_print (l, int_printer);
 #endif
 
-  goto cleanup;
-
-cleanup:
   list_free (l);
-  TEST_PASSED ();
+
+  TEST_PASSED_EXT ();
+  return TRUE;
 }
 
-void
+int
 test_delete_some_node (void)
 {
-#ifdef VERBOSE
-  TEST_BEGIN ();
-#endif
+  TEST_BEGIN_EXT ();
 
   LIST *l;
-  LIST_NODE *ln;
   int tmp;
 
   l = list_init ();
 
   tmp = 0;
   for (; tmp < 10; tmp++)
-    {
-      list_add_node (l, &tmp, sizeof (int));
-    }
+    list_add_node (l, &tmp, sizeof (int));
 
 #ifdef VERBOSE
+  LIST_NODE *ln;
+
   printf ("Before:\n");
   list_print (l, int_printer);
-#endif
-
-#ifdef VERBOSE
   ln = list_get_top_node (l);
-  ln = list_node_get_next (ln);
-  ln = list_node_get_next (ln);
+
+  for (tmp = 0; tmp < 2; tmp++)
+    ln = list_node_get_next (ln);
+
   tmp = *((int *)list_node_data_get_value (list_node_get_data (ln)));
 
   list_delete_node (l, ln);
@@ -522,11 +453,68 @@ test_delete_some_node (void)
   list_print (l, int_printer);
 #endif
 
-  goto cleanup;
-
-cleanup:
   list_free (l);
-  TEST_PASSED ();
+
+  TEST_PASSED_EXT ();
+  return TRUE;
+}
+
+static int
+are_ints_equal (void *lhs, void *rhs)
+{
+  int *ltmp, *rtmp;
+
+  ltmp = lhs;
+  rtmp = rhs;
+
+  return ((*ltmp - *rtmp) == 0) ? TRUE : FALSE;
+}
+
+void
+test_list_arr_init_and_free (void)
+{
+  TEST_BEGIN_EXT ();
+
+  LIST *l;
+  LIST_ARR *la, *test_against_arr;
+  int tmp, is_succ;
+
+  l = list_init ();
+
+  for (tmp = 3; tmp < 6; tmp++)
+    list_add_node (l, &tmp, sizeof (int));
+
+  la = list_arr_init (l);
+
+  for (int i = 0; i < (int)la->arr_sz; i++)
+    {
+      int *pa = (int *)la->arr;
+      int curr = pa[i];
+      if (i == 0)
+        printf ("(Top node %d)->", curr);
+      else
+        printf ("(Node %d)->", curr);
+    }
+  printf ("(Null node)\n");
+
+  test_against_arr = &(LIST_ARR){
+    .arr = (int[]){ 3, 4, 5 },
+    .el_szs = (size_t[]){ 4, 4, 4 },
+    .arr_sz = 3,
+  };
+
+  is_succ = list_arr_is_equal (la, test_against_arr, are_ints_equal);
+  if (!is_succ)
+    TEST_FAILED ();
+
+#ifdef VERBOSE
+  list_print (l, int_printer);
+#endif
+
+  list_arr_free (la);
+  list_free (l);
+
+  TEST_PASSED_EXT ();
 }
 
 int
@@ -535,6 +523,8 @@ main (void)
 #ifdef TESTING
   printf ("\nRUNNING %s:\n\n", __FILE__);
 
+  reset_tests_cnt ();
+#if 1
   test_list_init_and_free ();
   test_list_init_and_free_by_caller ();
 
@@ -551,8 +541,14 @@ main (void)
   test_list_move_node_to_tail ();
   test_list_move_node_to_tail_with_one_node ();
   test_list_move_tail_node_to_tail ();
+#endif
+  test_list_arr_init_and_free ();
 
-  printf ("\nTESTS ARE COMPLETED\n");
+  if (SUCC_TESTS_CNT != TESTS_CNT)
+    printf ("\nONLY %d TESTS FROM %d ARE COMPLETED SUCCESSFULLY!\n",
+            SUCC_TESTS_CNT, TESTS_CNT);
+  else
+    printf ("\nALL %d TESTS ARE COMPLETED SUCCESSFULLY!\n", TESTS_CNT);
 #endif
 
   return 0;
