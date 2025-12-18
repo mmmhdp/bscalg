@@ -5,6 +5,9 @@
 #include "list.h"
 #include "utils.h"
 
+extern int TESTS_CNT;
+extern int SUCC_TESTS_CNT;
+
 static void
 reset_tests_cnt (void)
 {
@@ -94,7 +97,7 @@ test_list_add_basic (void)
 }
 
 void
-val_copy (void **dst, void *v, size_t v_sz)
+val_copy (void **dst, const void *v, size_t v_sz)
 {
   *dst = malloc (v_sz);
   memcpy (*dst, v, v_sz);
@@ -161,7 +164,7 @@ free_nested_val (NODE_DATA *d)
 }
 
 void
-nested_val_copy (void **dst, void *v, size_t v_sz)
+nested_val_copy (void **dst, const void *v, size_t v_sz)
 {
   struct nested_val *tmp = (struct nested_val *)v;
   struct nested_val *buff;

@@ -8,7 +8,10 @@
 #include "list.h"
 #include "utils.h"
 
-static NODE_DATA *list_node_data_init (void *v, size_t vsz);
+static NODE_DATA *list_node_data_init (const void *v, size_t vsz);
+static NODE_DATA *list_node_data_init_by_caller (
+    const void *v, size_t vsz,
+    void (*val_copy) (void **dst, const void *v, size_t v_sz));
 static LIST_NODE *list_node_init (NODE_DATA *data, LIST_NODE *prev,
                                   LIST_NODE *next);
 static void list_node_data_free (NODE_DATA *d);
@@ -96,43 +99,92 @@ LIST *
 list_init (void)
 {
   LIST *l = calloc (1, sizeof (LIST));
+  if (!l)
+    {
+      ERROR ("Not enough memory to allocate LIST");
+      goto fail;
+    }
+
   return l;
+
+fail:
+  return NULL;
 }
 
 static NODE_DATA *
-list_node_data_init (void *v, size_t vsz)
+list_node_data_init (const void *v, size_t vsz)
 {
   NODE_DATA *d;
+
+  if (!v || vsz == 0)
+    {
+      ERROR ("Allocation of NODE_DATA with v = NULL or vsize = 0");
+      goto fail;
+    }
+
   d = calloc (1, sizeof (NODE_DATA));
+  if (!d)
+    {
+      ERROR ("Not enough memory for NODE_DATA allocation");
+      goto fail;
+    }
+
   d->value = malloc (vsz);
+  if (!d->value)
+    {
+      list_node_data_free (d);
+      ERROR ("Not enough memory for value inside NODE_DATA allocation");
+      goto fail;
+    }
 
   memcpy (d->value, v, vsz);
   d->sz = vsz;
   return d;
+
+fail:
+  return NULL;
 }
 
 static NODE_DATA *
-list_node_data_init_by_caller (void *v, size_t vsz,
-                               void (*val_copy) (void **dst, void *v,
+list_node_data_init_by_caller (const void *v, size_t vsz,
+                               void (*val_copy) (void **dst, const void *v,
                                                  size_t v_sz))
 {
   NODE_DATA *d;
 
   d = calloc (1, sizeof (NODE_DATA));
-  val_copy (&(d->value), v, vsz);
+  if (!d)
+    {
+      ERROR ("Not enough memory for NODE_DATA allocation");
+      goto fail;
+    }
 
+  val_copy (&(d->value), v, vsz);
   d->sz = vsz;
+
   return d;
+
+fail:
+  return NULL;
 }
 
 static LIST_NODE *
 list_node_init (NODE_DATA *data, LIST_NODE *prev, LIST_NODE *next)
 {
   LIST_NODE *n = calloc (1, sizeof (LIST_NODE));
+  if (!n)
+    {
+      ERROR ("Not enough memory for LIST_NODE allocation");
+      goto fail;
+    }
+
   n->next = next;
   n->prev = prev;
   n->data = data;
   return n;
+
+fail:
+  return NULL;
 }
 
 static void
@@ -322,8 +374,9 @@ list_add_node (LIST *l, void *v, int vsz)
 }
 
 LIST_NODE *
-list_add_node_by_caller (LIST *l, void *v, int vsz,
-                         void (*val_copy) (void **dst, void *v, size_t v_sz))
+list_add_node_by_caller (LIST *l, const void *v, int vsz,
+                         void (*val_copy) (void **dst, const void *v,
+                                           size_t v_sz))
 {
   NODE_DATA *d;
   LIST_NODE *n;
@@ -439,11 +492,19 @@ list_convert_to_arr (LIST *l)
   void **arr;
 
   arr = calloc (l->list_len, sizeof (void *));
+  if (!arr)
+    {
+      ERROR ("Not enough memory to allocate arr for list to arr conversion");
+      goto fail;
+    }
 
   for (tn = l->top, i = 0; tn != NULL; tn = tn->next)
     memcpy (arr[i], tn->data->value, tn->data->sz);
 
   return arr;
+
+fail:
+  return NULL;
 }
 
 void
@@ -471,7 +532,7 @@ list_print (LIST *l, void (*node_printer) (NODE_DATA *d, int is_top_node))
 }
 
 void
-list_print_p (LIST *l)
+list_print_pointers (LIST *l)
 {
   LIST_NODE *tn;
 
@@ -506,15 +567,28 @@ list_arr_init (LIST *l)
   int idx, copy_offset;
 
   if (!l || !l->top)
-    return NULL;
+    goto fail;
 
   la = calloc (1, sizeof (LIST_ARR));
+  if (!la)
+    {
+      ERROR ("Fail to allocate memory for an arr of list as array "
+             "representation");
+      goto fail;
+    }
 
   idx = 0;
   la_sz = 0;
   copy_offset = 0;
   arr = NULL;
   la_sizes = calloc (l->list_len, sizeof (size_t));
+  if (!la)
+    {
+      ERROR ("Fail to allocate memory for an arr of list as array "
+             "representation");
+      goto fail;
+    }
+
   ln = l->top;
 
   while (ln)
@@ -524,9 +598,16 @@ list_arr_init (LIST *l)
       la_sz += ln->data->sz;
 
       tmp = realloc (arr, la_sz);
-      if (tmp)
-        arr = tmp;
+      if (!tmp)
+        {
+          ERROR ("Memory reallocation for next node in array failed during "
+                 "transition from list to array");
+          free (la);
+          free (la_sizes);
+          goto fail;
+        }
 
+      arr = tmp;
       memcpy ((char *)arr + copy_offset, ln->data->value, ln->data->sz);
 
       ln = ln->next;
@@ -538,6 +619,10 @@ list_arr_init (LIST *l)
   la->arr = arr;
 
   return la;
+
+fail:
+
+  return NULL;
 }
 
 void

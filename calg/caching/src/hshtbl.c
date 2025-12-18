@@ -16,7 +16,7 @@
 static void line_node_data_printer_with_int_inner_value (NODE_DATA *d,
                                                          int is_top_node);
 
-static void val_copy (void **dst, void *v, size_t v_sz);
+static void val_copy (void **dst, const void *v, size_t v_sz);
 
 static void hline_update_last_key (HSH_LINE *hl, HSH_KEY *k);
 
@@ -262,10 +262,10 @@ ht_free (HSH_TBL *ht)
 }
 
 static void
-val_copy (void **dst, void *v, size_t v_sz)
+val_copy (void **dst, const void *v, size_t v_sz)
 {
   HSH_VAL *tv, *tdst;
-  tv = v;
+  tv = (void *)v;
 
   tdst = malloc (v_sz);
   memcpy (tdst, v, v_sz);
