@@ -166,7 +166,7 @@ ch_cache_hit_update (CACHE *c, HSH_VAL *ht_entrance)
 }
 
 static void
-ch_cl_val_copy (void **dst, void *value, size_t v_sz)
+ch_cl_val_copy (void **dst, const void *value, size_t v_sz)
 {
   NODE_DATA *tdst;
 

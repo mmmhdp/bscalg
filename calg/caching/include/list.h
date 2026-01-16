@@ -5,6 +5,12 @@
 typedef struct list LIST;
 typedef struct node LIST_NODE;
 typedef struct node_data NODE_DATA;
+typedef struct list_arr
+{
+  void *arr;
+  size_t *el_szs;
+  size_t arr_sz;
+} LIST_ARR;
 
 LIST *list_init (void);
 
@@ -13,8 +19,9 @@ void list_free (LIST *l);
 void list_free_by_caller (LIST *l, void (*free_val) (NODE_DATA *d));
 
 LIST_NODE *list_add_node (LIST *l, void *v, int vsz);
-LIST_NODE *list_add_node_by_caller (LIST *l, void *v, int vsz,
-                                    void (*val_copy) (void **dst, void *v,
+LIST_NODE *list_add_node_by_caller (LIST *l, const void *v, int vsz,
+                                    void (*val_copy) (void **dst,
+                                                      const void *v,
                                                       size_t v_sz));
 
 /*
@@ -56,4 +63,11 @@ void **list_convert_to_arr (LIST *l);
 void list_print (LIST *l,
                  void (*node_printer) (NODE_DATA *d, int is_top_node));
 
-void list_print_p (LIST *l);
+void list_print_pointers (LIST *l);
+
+LIST_ARR *list_arr_init (LIST *l);
+
+void list_arr_free (LIST_ARR *la);
+
+int list_arr_is_equal (LIST_ARR *l, LIST_ARR *r,
+                       int (*is_equal) (void *lhs, void *rhs));
